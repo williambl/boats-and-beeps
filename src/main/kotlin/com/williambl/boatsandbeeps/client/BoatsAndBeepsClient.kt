@@ -10,6 +10,6 @@ import net.minecraft.util.Identifier
 import net.minecraft.util.registry.Registry
 
 fun init() {
-    EntityRendererRegistry.INSTANCE.register(upgradedBoatEntityType) { context -> BoatEntityRenderer(context) }
+    EntityRendererRegistry.INSTANCE.register(upgradedBoatEntityType) { context -> UpgradedBoatRenderer(context) }
 }
 

@@ -2,6 +2,8 @@ package com.williambl.boatsandbeeps
 
 import com.williambl.boatsandbeeps.mixin.BoatEntityAccessor
 import net.minecraft.entity.Entity
+import net.minecraft.entity.EntityDimensions
+import net.minecraft.entity.EntityPose
 import net.minecraft.entity.EntityType
 import net.minecraft.entity.data.DataTracker
 import net.minecraft.entity.data.TrackedData
@@ -43,7 +45,7 @@ class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: Worl
         }
     }
 
-    private fun getSeats(): List<Vec3d> = upgrades.flatMap { it.value.flatMap { u -> u.seats.map { s -> s.add((-it.key*1.875), 0.0, 0.0) } } }
+    private fun getSeats(): List<Vec3d> = upgrades.flatMap { it.value.flatMap { u -> u.seats.map { s -> s.add(-it.key*2.0, 0.0, 0.0) } } }
 
     @Suppress("CAST_NEVER_SUCCEEDS")
     @JvmName("accessorHelper\$yawVelocity")
