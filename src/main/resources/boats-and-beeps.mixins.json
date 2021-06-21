@@ -3,6 +3,7 @@
   "package": "com.williambl.boatsandbeeps.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
+    "BoatEntityAccessor"
   ],
   "client": [
   ],
