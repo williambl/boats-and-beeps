@@ -1,6 +1,9 @@
 package com.williambl.boatsandbeeps
 
 import com.williambl.boatsandbeeps.mixin.BoatEntityAccessor
+import com.williambl.multipartentities.MultipartEntity
+import net.minecraft.block.BlockState
+import net.minecraft.block.ShapeContext
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.EntityPose
@@ -10,20 +13,34 @@ import net.minecraft.entity.data.TrackedData
 import net.minecraft.entity.data.TrackedDataHandlerRegistry
 import net.minecraft.entity.passive.AnimalEntity
 import net.minecraft.entity.vehicle.BoatEntity
+import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
+import net.minecraft.util.crash.CrashException
+import net.minecraft.util.crash.CrashReport
+import net.minecraft.util.crash.CrashReportSection
+import net.minecraft.util.function.BooleanBiFunction
+import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Vec3d
+import net.minecraft.util.shape.VoxelShapes
 import net.minecraft.world.World
+import kotlin.math.max
 
 class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: World, val upgrades: Map<Int, Set<BoatUpgrade>> = mapOf(0 to setOf(
     BoatUpgrade(listOf(Vec3d(0.2, 0.0, 0.0), Vec3d(-0.6, 0.0, 0.0)))), 1 to setOf(BoatUpgrade(listOf(Vec3d(0.2, 0.0, 0.0), Vec3d(-0.6, 0.0, 0.0))))
-)) : BoatEntity(entityType, world) {
+)) : BoatEntity(entityType, world), MultipartEntity {
 
     var parts: Int
         get() = dataTracker.get(partsData)
-        set(value) = dataTracker.set(partsData, value)
+        set(value) {
+            dataTracker.set(partsData, value)
+            partEntities = Array(max(value, 0)) { BoatPartEntity(this, this.width, this.height) }
+        }
 
     init {
-        dataTracker.startTracking(partsData, 1)
+        dataTracker.startTracking(partsData, 2)
+        ignoreCameraFrustum = true //todo fix the big BB
     }
+
+    var partEntities = Array(max(parts, 0)) { BoatPartEntity(this, this.width, this.height) }
 
     override fun canAddPassenger(passenger: Entity): Boolean {
         return passengerList.size < getSeats().size
@@ -47,9 +64,85 @@ class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: Worl
 
     private fun getSeats(): List<Vec3d> = upgrades.flatMap { it.value.flatMap { u -> u.seats.map { s -> s.add(-it.key*2.0, 0.0, 0.0) } } }
 
+    override fun tick() {
+        partEntities.forEachIndexed { i, part ->
+            part.partTick(i)
+        }
+        super.tick()
+    }
+
+    override fun onSpawnPacket(packet: EntitySpawnS2CPacket) {
+        super.onSpawnPacket(packet)
+        val parts = this.getParts()
+        for (i in parts.indices) {
+            parts[i].id = i + packet.id
+        }
+    }
+
+    override fun getDimensions(pose: EntityPose): EntityDimensions {
+        return this.type.dimensions.scaled(parts*2f, 1f)
+    }
+
+    override fun isCollidable(): Boolean {
+        return false
+    }
+
+    override fun collides(): Boolean {
+        return false
+    }
+
+    override fun collidesWith(other: Entity): Boolean {
+        return false
+    }
+
+    override fun isPushable(): Boolean {
+        return false
+    }
+
+    override fun collidesWithStateAtPos(pos: BlockPos, state: BlockState): Boolean {
+        return VoxelShapes.matchesAnywhere(
+            state.getCollisionShape(world, pos, ShapeContext.of(this)),
+            partEntities.map { VoxelShapes.cuboid(it.boundingBox) }.reduce { acc, voxelShape -> VoxelShapes.combine(acc, voxelShape, BooleanBiFunction.AND) },
+            BooleanBiFunction.AND
+        )
+    }
+
+    override fun checkBlockCollision() {
+        partEntities.map { it.boundingBox }.forEach { box ->
+            val blockPos = BlockPos(box.minX + 0.001, box.minY + 0.001, box.minZ + 0.001)
+            val blockPos2 = BlockPos(box.maxX - 0.001, box.maxY - 0.001, box.maxZ - 0.001)
+            if (world.isRegionLoaded(blockPos, blockPos2)) {
+                val mutable = BlockPos.Mutable()
+                for (i in blockPos.x..blockPos2.x) {
+                    for (j in blockPos.y..blockPos2.y) {
+                        for (k in blockPos.z..blockPos2.z) {
+                            mutable[i, j] = k
+                            val blockState = world.getBlockState(mutable)
+                            try {
+                                blockState.onEntityCollision(world, mutable, this)
+                                onBlockCollision(blockState)
+                            } catch (var12: Throwable) {
+                                val crashReport = CrashReport.create(var12, "Colliding entity with block")
+                                val crashReportSection = crashReport.addElement("Block being collided with")
+                                CrashReportSection.addBlockInfo(crashReportSection, world, mutable, blockState)
+                                throw CrashException(crashReport)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun pushAwayFrom(entity: Entity?) {}
+
     @Suppress("CAST_NEVER_SUCCEEDS")
     @JvmName("accessorHelper\$yawVelocity")
     fun getYawVelocity(): Float = (this as BoatEntityAccessor).yawVelocity
+
+    override fun getParts(): Array<BoatPartEntity> {
+        return partEntities
+    }
 
     companion object {
         val partsData: TrackedData<Int> = DataTracker.registerData(UpgradedBoatEntity::class.java, TrackedDataHandlerRegistry.INTEGER)
