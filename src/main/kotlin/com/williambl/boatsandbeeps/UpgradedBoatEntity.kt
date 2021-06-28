@@ -8,6 +8,9 @@ import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.EntityPose
 import net.minecraft.entity.LivingEntity
+import net.minecraft.entity.data.DataTracker
+import net.minecraft.entity.data.TrackedDataHandler
+import net.minecraft.entity.data.TrackedDataHandlerRegistry
 import net.minecraft.entity.mob.WaterCreatureEntity
 import net.minecraft.entity.passive.AnimalEntity
 import net.minecraft.entity.player.PlayerEntity
@@ -26,24 +29,30 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Vec3d
 import net.minecraft.util.shape.VoxelShapes
 import net.minecraft.world.World
+import java.sql.DataTruncation
 import kotlin.math.max
 import kotlin.properties.Delegates
 
 class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialParts: Int = 1, var upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = listOf())
     : BoatEntity(upgradedBoatEntityType, world), MultipartEntity {
 
-    var fuel: Int = 0
-
     init {
         ignoreCameraFrustum = true //todo fix the big BB
         setPosition(position)
+        dataTracker.startTracking(isLitKey, false)
     }
 
     var parts: Int by Delegates.observable(initialParts) { _, _, new ->
         partEntities = Array(max(new, 1)) { BoatPartEntity(this, this.width, this.height) }
     }
 
-   var partEntities = Array(max(parts, 1)) { BoatPartEntity(this, this.width, this.height) }
+    var partEntities = Array(max(parts, 1)) { BoatPartEntity(this, this.width, this.height) }
+
+    var fuel: Int = 0
+
+    var isLit
+        get() = dataTracker.get(isLitKey)
+        set(value) = dataTracker.set(isLitKey, value)
 
     override fun canAddPassenger(passenger: Entity): Boolean {
         return passengerList.size < getSeats().size
@@ -84,8 +93,8 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
         partEntities.forEachIndexed { i, part ->
             part.partTick(i)
         }
-        upgrades.forEach { p -> p.forEach {
-            it.value.tickMethod(this)
+        upgrades.forEachIndexed { idx, p -> p.forEach {
+            it.value.tickMethod(this, pos.add(it.key.position.add(-2.0*idx, 0.0, 0.0).rotateY(-yaw * 0.0175f - 1.57f)))
         } }
         super.tick()
         val list = partEntities.flatMap { world.getOtherEntities(
@@ -103,6 +112,13 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
                         pushAwayFrom(entity)
                     }
                 }
+            }
+        }
+        if (!world.isClient()) {
+            if (fuel > 0 && !isLit) {
+                isLit = true
+            } else if (fuel <= 0 && isLit) {
+                isLit = false
             }
         }
     }
@@ -214,5 +230,9 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
         val extraData = readUpgradesAndParts(nbt.getCompound("BoatData"))
         parts = extraData.first
         upgrades = extraData.second
+    }
+
+    companion object {
+        val isLitKey = DataTracker.registerData(UpgradedBoatEntity::class.java, TrackedDataHandlerRegistry.BOOLEAN)
     }
 }

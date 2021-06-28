@@ -71,7 +71,8 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
             matrixStack.translate(-2.0, 0.0, 0.0)
         }
         matrixStack.pop()
-        for ((pos, blockstate) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.6666667*idx, 0.0, 0.0), it.value.blockstate) } }) {
+        for ((pos, blockstatefunc) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.6666667*idx, 0.0, 0.0), it.value.blockstate) } }) {
+            val blockstate = blockstatefunc.invoke(boatEntity)
             if (blockstate.renderType != BlockRenderType.INVISIBLE) {
                 matrixStack.push()
                 matrixStack.scale(-0.75f, -0.75f, 0.75f)
