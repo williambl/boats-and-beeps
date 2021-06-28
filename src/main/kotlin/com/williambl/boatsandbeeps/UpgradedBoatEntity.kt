@@ -7,7 +7,6 @@ import net.minecraft.block.ShapeContext
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.EntityPose
-import net.minecraft.entity.EntityType
 import net.minecraft.entity.data.DataTracker
 import net.minecraft.entity.data.TrackedData
 import net.minecraft.entity.data.TrackedDataHandlerRegistry
@@ -15,8 +14,7 @@ import net.minecraft.entity.passive.AnimalEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtList
-import net.minecraft.nbt.NbtTypes
+import net.minecraft.network.Packet
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
 import net.minecraft.text.LiteralText
 import net.minecraft.util.ActionResult
@@ -30,23 +28,21 @@ import net.minecraft.util.math.Vec3d
 import net.minecraft.util.shape.VoxelShapes
 import net.minecraft.world.World
 import kotlin.math.max
+import kotlin.properties.Delegates
 
-class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: World, val upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = listOf())
-    : BoatEntity(entityType, world), MultipartEntity {
-
-    var parts: Int
-        get() = dataTracker.get(partsData)
-        set(value) {
-            dataTracker.set(partsData, value)
-            partEntities = Array(max(value, 0)) { BoatPartEntity(this, this.width, this.height) }
-        }
+class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialParts: Int = 1, var upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = listOf())
+    : BoatEntity(upgradedBoatEntityType, world), MultipartEntity {
 
     init {
-        dataTracker.startTracking(partsData, 2)
         ignoreCameraFrustum = true //todo fix the big BB
+        setPosition(position)
     }
 
-    var partEntities = Array(max(parts, 0)) { BoatPartEntity(this, this.width, this.height) }
+    var parts: Int by Delegates.observable(initialParts) { _, _, new ->
+        partEntities = Array(max(new, 1)) { BoatPartEntity(this, this.width, this.height) }
+    }
+
+   var partEntities = Array(max(parts, 1)) { BoatPartEntity(this, this.width, this.height) }
 
     override fun canAddPassenger(passenger: Entity): Boolean {
         return passengerList.size < getSeats().size
@@ -55,7 +51,12 @@ class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: Worl
     override fun updatePassengerPosition(passenger: Entity) {
         if (hasPassenger(passenger)) {
             val i = passengerList.indexOf(passenger)
-            val offset = getSeats()[i].add(0.0, (if (this.isRemoved) 0.01 else this.mountedHeightOffset) + passenger.heightOffset, 0.0).rotateY(-yaw * 0.0175f - 1.57f)
+            val seat = getSeats().getOrNull(i)
+            if (seat == null) {
+                passenger.stopRiding()
+                return
+            }
+            val offset = seat.add(0.0, (if (this.isRemoved) 0.01 else this.mountedHeightOffset) + passenger.heightOffset, 0.0).rotateY(-yaw * 0.0175f - 1.57f)
             passenger.setPosition(pos.add(offset))
             passenger.yaw = passenger.yaw + getYawVelocity()
             passenger.headYaw = passenger.headYaw + getYawVelocity()
@@ -87,9 +88,14 @@ class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: Worl
 
     override fun onSpawnPacket(packet: EntitySpawnS2CPacket) {
         super.onSpawnPacket(packet)
-        val parts = this.getParts()
-        for (i in parts.indices) {
-            parts[i].id = i + packet.id
+        if (packet is ExtraDataEntitySpawnS2CPacket) {
+            val extraData = readUpgradesAndParts(packet.extraData)
+            parts = extraData.first
+            val entities = this.getParts()
+            for (i in entities.indices) {
+                entities[i].id = i + packet.id
+            }
+            upgrades = extraData.second
         }
     }
 
@@ -163,16 +169,19 @@ class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: Worl
         return super.interact(player, hand)
     }
 
-    fun getAsNbt(): NbtCompound {
-        return NbtCompound().apply {
-            putInt("Parts", parts)
-            put("Upgrades", NbtList().also { list ->
-                upgrades.forEach { u -> list.add(NbtCompound().apply { u.forEach { (key, value) -> putString(key.name, value.getId().toString()) } }) }
-            })
-        }
+    override fun createSpawnPacket(): Packet<*> {
+        return ExtraDataEntitySpawnS2CPacket(this, getAsNbt())
     }
 
-    companion object {
-        val partsData: TrackedData<Int> = DataTracker.registerData(UpgradedBoatEntity::class.java, TrackedDataHandlerRegistry.INTEGER)
+    override fun writeCustomDataToNbt(nbt: NbtCompound) {
+        super.writeCustomDataToNbt(nbt)
+        nbt.put("BoatData", getAsNbt())
+    }
+
+    override fun readCustomDataFromNbt(nbt: NbtCompound) {
+        super.readCustomDataFromNbt(nbt)
+        val extraData = readUpgradesAndParts(nbt.getCompound("BoatData"))
+        parts = extraData.first
+        upgrades = extraData.second
     }
 }
