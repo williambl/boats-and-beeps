@@ -12,8 +12,15 @@ import net.minecraft.entity.data.DataTracker
 import net.minecraft.entity.data.TrackedData
 import net.minecraft.entity.data.TrackedDataHandlerRegistry
 import net.minecraft.entity.passive.AnimalEntity
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.vehicle.BoatEntity
+import net.minecraft.nbt.NbtCompound
+import net.minecraft.nbt.NbtList
+import net.minecraft.nbt.NbtTypes
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
+import net.minecraft.text.LiteralText
+import net.minecraft.util.ActionResult
+import net.minecraft.util.Hand
 import net.minecraft.util.crash.CrashException
 import net.minecraft.util.crash.CrashReport
 import net.minecraft.util.crash.CrashReportSection
@@ -24,9 +31,8 @@ import net.minecraft.util.shape.VoxelShapes
 import net.minecraft.world.World
 import kotlin.math.max
 
-class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: World, val upgrades: Map<Int, Set<BoatUpgrade>> = mapOf(0 to setOf(
-    BoatUpgrade(listOf(Vec3d(0.2, 0.0, 0.0), Vec3d(-0.6, 0.0, 0.0)))), 1 to setOf(BoatUpgrade(listOf(Vec3d(0.2, 0.0, 0.0), Vec3d(-0.6, 0.0, 0.0))))
-)) : BoatEntity(entityType, world), MultipartEntity {
+class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: World, val upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = listOf())
+    : BoatEntity(entityType, world), MultipartEntity {
 
     var parts: Int
         get() = dataTracker.get(partsData)
@@ -62,7 +68,15 @@ class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: Worl
         }
     }
 
-    private fun getSeats(): List<Vec3d> = upgrades.flatMap { it.value.flatMap { u -> u.seats.map { s -> s.add(-it.key*2.0, 0.0, 0.0) } } }
+    private fun getSeats(): List<Vec3d> = upgrades.flatMapIndexed { index, map ->
+        map.map { (slot, upgrade) ->
+            if (upgrade == BoatUpgrade.SEAT) {
+                slot.position.add(-index * 2.0, 0.0, 0.0)
+            } else {
+                null
+            }
+        }.filterNotNull()
+    }
 
     override fun tick() {
         partEntities.forEachIndexed { i, part ->
@@ -142,6 +156,20 @@ class UpgradedBoatEntity(entityType: EntityType<UpgradedBoatEntity>, world: Worl
 
     override fun getParts(): Array<BoatPartEntity> {
         return partEntities
+    }
+
+    override fun interact(player: PlayerEntity?, hand: Hand?): ActionResult {
+        player?.sendMessage(LiteralText(getAsNbt().toString()), false)
+        return super.interact(player, hand)
+    }
+
+    fun getAsNbt(): NbtCompound {
+        return NbtCompound().apply {
+            putInt("Parts", parts)
+            put("Upgrades", NbtList().also { list ->
+                upgrades.forEach { u -> list.add(NbtCompound().apply { u.forEach { (key, value) -> putString(key.name, value.getId().toString()) } }) }
+            })
+        }
     }
 
     companion object {

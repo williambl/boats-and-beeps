@@ -1,6 +1,7 @@
 package com.williambl.boatsandbeeps
 
 import net.fabricmc.fabric.api.`object`.builder.v1.entity.FabricEntityTypeBuilder
+import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder
 import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.SpawnGroup
 import net.minecraft.util.Identifier
