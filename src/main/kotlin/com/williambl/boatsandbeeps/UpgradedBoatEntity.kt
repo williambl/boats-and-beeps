@@ -7,15 +7,15 @@ import net.minecraft.block.ShapeContext
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.EntityPose
-import net.minecraft.entity.data.DataTracker
-import net.minecraft.entity.data.TrackedData
-import net.minecraft.entity.data.TrackedDataHandlerRegistry
+import net.minecraft.entity.LivingEntity
+import net.minecraft.entity.mob.WaterCreatureEntity
 import net.minecraft.entity.passive.AnimalEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.network.Packet
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
+import net.minecraft.predicate.entity.EntityPredicates
 import net.minecraft.text.LiteralText
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
@@ -84,6 +84,24 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
             part.partTick(i)
         }
         super.tick()
+        val list = partEntities.flatMap { world.getOtherEntities(
+            this,
+            it.boundingBox.expand(0.5, -0.01, 0.5), // brrrr
+            EntityPredicates.canBePushedBy(it)
+        ) }
+        if (list.isNotEmpty()) {
+            val bl = !world.isClient && this.primaryPassenger !is PlayerEntity
+            for (entity in list) {
+                if (!entity.hasPassenger(this)) {
+                    if (bl && canAddPassenger(entity) && !entity.hasVehicle() && entity.width < this.width && entity is LivingEntity && entity !is WaterCreatureEntity && entity !is PlayerEntity) {
+                        entity.startRiding(this)
+                    } else {
+                        pushAwayFrom(entity)
+                    }
+                }
+            }
+        }
+
     }
 
     override fun onSpawnPacket(packet: EntitySpawnS2CPacket) {

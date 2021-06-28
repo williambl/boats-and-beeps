@@ -63,7 +63,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
 
     override fun getDefaultStack(): ItemStack {
         return super.getDefaultStack().also {
-            it.orCreateTag.put("BoatData", writeUpgradesAndParts(3, listOf(mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT), mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT), mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT))))
+            it.orCreateTag.put("BoatData", writeUpgradesAndParts(3, List(3) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT) }))
         }
     }
 
