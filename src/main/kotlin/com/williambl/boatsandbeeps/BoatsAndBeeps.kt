@@ -3,16 +3,17 @@ package com.williambl.boatsandbeeps
 import net.fabricmc.fabric.api.`object`.builder.v1.entity.FabricEntityTypeBuilder
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
+import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
+import net.minecraft.block.AbstractBlock
+import net.minecraft.block.Material
 import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.SpawnGroup
 import net.minecraft.entity.vehicle.BoatEntity
-import net.minecraft.item.BoatItem
-import net.minecraft.item.Item
-import net.minecraft.item.ItemGroup
-import net.minecraft.item.Items
+import net.minecraft.item.*
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtList
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
+import net.minecraft.screen.ScreenHandlerContext
 import net.minecraft.util.Identifier
 import net.minecraft.util.registry.Registry
 
@@ -30,6 +31,17 @@ val upgradedBoatItems = BoatEntity.Type.values().map { type ->
         UpgradedBoatItem(type, Item.Settings().maxCount(1).group(ItemGroup.TRANSPORTATION))
     )
 }
+
+val boatUpgradeTableScreenHandlerType = ScreenHandlerRegistry.registerSimple(Identifier("boats-and-beeps:boat_upgrade_table")) { syncId, inventory ->
+    BoatUpgradeTableGuiDescription(
+        syncId,
+        inventory,
+        ScreenHandlerContext.EMPTY
+    )
+}
+
+val boatUpgradeTable = Registry.register(Registry.BLOCK, Identifier("boats-and-beeps:boat_upgrade_table"), BoatUpgradeTableBlock(AbstractBlock.Settings.of(Material.WOOD)))
+val boatUpgradeTableItem = Registry.register(Registry.ITEM, Identifier("boats-and-beeps:boat_upgrade_table"), BlockItem(boatUpgradeTable, Item.Settings().group(ItemGroup.DECORATIONS)))
 
 fun init() {
 }

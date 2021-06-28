@@ -1,15 +1,22 @@
 package com.williambl.boatsandbeeps.client
 
+import com.williambl.boatsandbeeps.BoatUpgradeTableGuiDescription
+import com.williambl.boatsandbeeps.boatUpgradeTableScreenHandlerType
 import com.williambl.boatsandbeeps.upgradedBoatEntityType
-import net.fabricmc.fabric.api.`object`.builder.v1.entity.FabricEntityTypeBuilder
 import net.fabricmc.fabric.api.client.rendereregistry.v1.EntityRendererRegistry
-import net.minecraft.client.render.entity.BoatEntityRenderer
-import net.minecraft.entity.EntityDimensions
-import net.minecraft.entity.SpawnGroup
-import net.minecraft.util.Identifier
-import net.minecraft.util.registry.Registry
+import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
+import net.minecraft.entity.player.PlayerInventory
+import net.minecraft.text.Text
+
 
 fun init() {
     EntityRendererRegistry.INSTANCE.register(upgradedBoatEntityType) { context -> UpgradedBoatRenderer(context) }
+    ScreenRegistry.register(boatUpgradeTableScreenHandlerType) { gui: BoatUpgradeTableGuiDescription, inventory: PlayerInventory, title: Text ->
+        BoatUpgradeTableScreen(
+            gui,
+            inventory.player,
+            title
+        )
+    }
 }
 
