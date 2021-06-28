@@ -16,7 +16,6 @@ import net.minecraft.nbt.NbtCompound
 import net.minecraft.network.Packet
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
 import net.minecraft.predicate.entity.EntityPredicates
-import net.minecraft.text.LiteralText
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
 import net.minecraft.util.crash.CrashException
@@ -32,6 +31,8 @@ import kotlin.properties.Delegates
 
 class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialParts: Int = 1, var upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = listOf())
     : BoatEntity(upgradedBoatEntityType, world), MultipartEntity {
+
+    var fuel: Int = 0
 
     init {
         ignoreCameraFrustum = true //todo fix the big BB
@@ -104,7 +105,6 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
                 }
             }
         }
-
     }
 
     override fun onSpawnPacket(packet: EntitySpawnS2CPacket) {
@@ -185,8 +185,18 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
         return partEntities
     }
 
-    override fun interact(player: PlayerEntity?, hand: Hand?): ActionResult {
-        player?.sendMessage(LiteralText(getAsNbt().toString()), false)
+    override fun interact(player: PlayerEntity, hand: Hand): ActionResult {
+        if (player.shouldCancelInteraction()) {
+            return ActionResult.PASS
+        }
+        for (upgrade in upgrades) {
+            for (entry in upgrade) {
+                val result = entry.value.interactMethod(this, player, hand)
+                if (result != ActionResult.PASS) {
+                    return result
+                }
+            }
+        }
         return super.interact(player, hand)
     }
 

@@ -77,7 +77,7 @@ class BoatPartEntity(parent: UpgradedBoatEntity, width: Float, height: Float) :
         return parent.damage(source, amount)
     }
 
-    override fun interact(player: PlayerEntity?, hand: Hand?): ActionResult {
+    override fun interact(player: PlayerEntity, hand: Hand): ActionResult {
         return parent.interact(player, hand)
     }
 
