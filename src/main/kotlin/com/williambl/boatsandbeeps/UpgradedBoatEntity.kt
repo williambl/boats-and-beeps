@@ -83,6 +83,9 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
         partEntities.forEachIndexed { i, part ->
             part.partTick(i)
         }
+        upgrades.forEach { p -> p.forEach {
+            it.value.tickMethod(this)
+        } }
         super.tick()
         val list = partEntities.flatMap { world.getOtherEntities(
             this,
