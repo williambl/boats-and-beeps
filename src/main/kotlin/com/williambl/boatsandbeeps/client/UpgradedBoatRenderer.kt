@@ -66,14 +66,14 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
         boatEntityModel.setAngles(boatEntity, g, 0.0f, -0.1f, 0.0f, 0.0f)
         val vertexConsumer = vertexConsumerProvider.getBuffer(boatEntityModel.getLayer(identifier))
         matrixStack.push()
-        for (l in 0..boatEntity.parts) {
+        for (l in 0 until boatEntity.parts) {
             boatEntityModel.render(matrixStack, vertexConsumer, i, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f)
             matrixStack.translate(-2.0, 0.0, 0.0)
         }
         matrixStack.pop()
         matrixStack.push()
         val vertexConsumer2 = vertexConsumerProvider.getBuffer(RenderLayer.getWaterMask())
-        for (l in 0..boatEntity.parts) {
+        for (l in 0 until boatEntity.parts) {
             boatEntityModel.waterPatch.render(matrixStack, vertexConsumer2, i, OverlayTexture.DEFAULT_UV)
             matrixStack.translate(-2.0, 0.0, 0.0)
         }
