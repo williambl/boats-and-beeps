@@ -25,12 +25,12 @@ val upgradedBoatEntityType = Registry.register(Registry.ENTITY_TYPE, Identifier(
 )
 
 val upgradedBoatItems = BoatEntity.Type.values().map { type ->
-    Registry.register(
+    type to Registry.register(
         Registry.ITEM,
         Identifier("boats-and-beeps:${type.getName()}_boat"),
         UpgradedBoatItem(type, Item.Settings().maxCount(1).group(ItemGroup.TRANSPORTATION))
     )
-}
+}.toMap()
 
 val boatUpgradeTableScreenHandlerType = ScreenHandlerRegistry.registerSimple(Identifier("boats-and-beeps:boat_upgrade_table")) { syncId, inventory ->
     BoatUpgradeTableGuiDescription(

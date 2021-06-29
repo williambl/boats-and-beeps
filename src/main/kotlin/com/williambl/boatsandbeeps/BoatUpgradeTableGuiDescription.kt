@@ -4,13 +4,18 @@ import io.github.cottonmc.cotton.gui.SyncedGuiDescription
 import io.github.cottonmc.cotton.gui.widget.*
 import io.github.cottonmc.cotton.gui.widget.data.Insets
 import io.github.cottonmc.cotton.gui.widget.data.VerticalAlignment
+import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityType
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.entity.vehicle.BoatEntity
+import net.minecraft.inventory.Inventory
+import net.minecraft.item.BoatItem
+import net.minecraft.item.ItemStack
 import net.minecraft.screen.ScreenHandlerContext
 import net.minecraft.text.LiteralText
 import net.minecraft.util.Identifier
+import kotlin.properties.Delegates
 
 
 class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInventory, val context: ScreenHandlerContext) :
@@ -22,12 +27,16 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     val upgradeSlots: Map<BoatUpgradeSlot, WItemSlot>
     val entityView: WEntityView
     val partsPanel: WPlainPanel
+    val currentPartLabel: WLabel
+    val prevPartButton: WButton
+    val nextPartButton: WButton
+    val addPartSlot: WItemSlot
 
     init {
         setRootPanel(root)
         root.setSize(140, 200)
         root.insets = Insets.ROOT_PANEL
-        boatSlot = WItemSlot.of(blockInventory, 0)
+        boatSlot = WItemSlot.of(blockInventory, 0).setFilter { it.item is BoatItem || it.item is UpgradedBoatItem }.also { it.addChangeListener(this::onBoatChanged) }
         root.add(boatSlot, 18, 18)
 
         upgradesPanel = WPlainPanel()
@@ -53,11 +62,15 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
 
         partsPanel = WPlainPanel()
         partsPanel.setSize(72, 45)
-        partsPanel.add(WLabel("Part: 1"), 0, 0)
-        partsPanel.add(WButton(LiteralText("<")), 0, 9)
-        partsPanel.add(WButton(LiteralText(">")), 18, 9)
+        currentPartLabel = WLabel("Part: 1")
+        partsPanel.add(currentPartLabel, 0, 0)
+        prevPartButton = WButton(LiteralText("<")).also { it.onClick = Runnable { onPrevPartPressed() } }
+        partsPanel.add(prevPartButton, 0, 9)
+        nextPartButton = WButton(LiteralText(">")).also { it.onClick = Runnable { onNextPartPressed() } }
+        partsPanel.add(nextPartButton, 18, 9)
         partsPanel.add(WLabel("Add Part:").setVerticalAlignment(VerticalAlignment.CENTER), 0, 30)
-        partsPanel.add(WItemSlot.of(blockInventory, 7), 54, 30)
+        addPartSlot = WItemSlot.of(blockInventory, 7).also { it.isModifiable = false }.also { it.addChangeListener(this::onPartAdded) }
+        partsPanel.add(addPartSlot, 54, 30)
 
         root.add(partsPanel, 0, 54)
 
@@ -66,11 +79,81 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
         root.validate(this)
     }
 
+    /// STATE
+
+    var hasBoat = false
+    var currentPart: Int by Delegates.observable(0) { prop, old, new -> onChangePart(new) }
+    var partsAndUpgrades: Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgrade>>>? by Delegates.observable(null) { prop, old, new -> onChangePart(currentPart) } // never set me except for when reading from the itemstack
+
+    ///
+
     override fun close(playerEntity: PlayerEntity?) {
         super.close(playerEntity)
         context.run { _, _ ->
             dropInventory(playerEntity, blockInventory)
         }
+    }
+
+    fun onBoatChanged(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {
+        if (stack.isEmpty) {
+            onBoatRemoved()
+        } else {
+            onBoatAdded(slot, inventory, index, stack)
+        }
+    }
+
+    fun onBoatAdded(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {
+        if (stack.item is BoatItem) {
+            inventory.setStack(index, UpgradedBoatItem.boatToUpgradedBoat(stack))
+        }
+        hasBoat = true
+        partsAndUpgrades = readUpgradesAndParts(inventory.getStack(index).getOrCreateSubTag("BoatData"))
+        currentPart = 1
+        addPartSlot.isModifiable = true
+    }
+
+    fun onBoatRemoved() {
+        hasBoat = false
+        partsAndUpgrades = null
+        currentPart = 0
+        addPartSlot.isModifiable = false
+    }
+
+    fun onPrevPartPressed() {
+        currentPart--
+    }
+
+    fun onNextPartPressed() {
+        currentPart++
+    }
+
+    fun onChangePart(newPart: Int) {
+        prevPartButton.isEnabled = newPart > 1
+        nextPartButton.isEnabled = newPart < partsAndUpgrades?.first ?: 0
+        currentPartLabel.text = LiteralText("Part: $newPart/${partsAndUpgrades?.first ?: 0}")
+        entityView.entity = createEntityForPart(newPart)
+    }
+
+    fun onPartAdded(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {
+        inventory.setStack(index, ItemStack.EMPTY)
+        if (stack.item is BoatItem) {
+            modifyBoatState((partsAndUpgrades?.first ?: 0)+1, (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.add(mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT)) })
+        } else if (stack.item is UpgradedBoatItem) {
+            val otherState = readUpgradesAndParts(stack.getOrCreateSubTag("BoatData"))
+            modifyBoatState((partsAndUpgrades?.first ?: 0) + otherState.first, (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.addAll(otherState.second) })
+        }
+    }
+
+    fun modifyBoatState(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>>) {
+        blockInventory.getStack(0).orCreateTag.let {
+            it.remove("BoatData")
+            it.put("BoatData", writeUpgradesAndParts(parts, upgrades))
+            partsAndUpgrades = readUpgradesAndParts(it.getCompound("BoatData"))
+        }
+    }
+
+    private fun createEntityForPart(newPart: Int): Entity? {
+        return null //TODO
     }
 
     companion object {

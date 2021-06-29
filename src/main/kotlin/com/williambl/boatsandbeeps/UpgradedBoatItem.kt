@@ -1,8 +1,10 @@
 package com.williambl.boatsandbeeps
 
+import com.williambl.boatsandbeeps.mixin.BoatItemAccessor
 import net.minecraft.entity.Entity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.vehicle.BoatEntity
+import net.minecraft.item.BoatItem
 import net.minecraft.item.Item
 import net.minecraft.item.ItemGroup
 import net.minecraft.item.ItemStack
@@ -75,5 +77,16 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
 
     companion object {
         val RIDERS: Predicate<Entity> = EntityPredicates.EXCEPT_SPECTATOR.and(Entity::collides)
+
+        fun boatToUpgradedBoat(stack: ItemStack): ItemStack {
+            if (stack.item is BoatItem) {
+                val type = (stack.item as BoatItemAccessor).type
+                val nbt = stack.tag
+                return ItemStack(upgradedBoatItems[type], stack.count)
+                    .also { it.tag = nbt }
+                    .also { it.orCreateTag.put("BoatData", writeUpgradesAndParts(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT) })) }
+            }
+            return ItemStack.EMPTY
+        }
     }
 }
