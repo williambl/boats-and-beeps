@@ -14,7 +14,9 @@ import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtList
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
 import net.minecraft.screen.ScreenHandlerContext
+import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
+import net.minecraft.util.math.Vec3d
 import net.minecraft.util.registry.Registry
 
 val upgradedBoatEntityType = Registry.register(Registry.ENTITY_TYPE, Identifier("boats-and-beeps:upgraded_boat"),
@@ -54,6 +56,16 @@ fun init() {
             }
         }
     }
+    ServerPlayNetworking.registerGlobalReceiver(Identifier("boats-and-beeps:interact")) { server, player, handler, buf, sender ->
+        val boatId = buf.readVarInt()
+        val hand = buf.readEnumConstant(Hand::class.java)
+        val hitPos = Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble())
+        val partNumber = buf.readVarInt()
+        server.execute {
+            (player.world.getEntityById(boatId) as UpgradedBoatEntity).interactAtPart(player, hand, hitPos, partNumber)
+        }
+    }
+
 }
 
 fun UpgradedBoatEntity.getAsNbt(): NbtCompound {

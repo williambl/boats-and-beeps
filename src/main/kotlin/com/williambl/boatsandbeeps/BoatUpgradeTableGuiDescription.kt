@@ -6,8 +6,6 @@ import io.github.cottonmc.cotton.gui.SyncedGuiDescription
 import io.github.cottonmc.cotton.gui.widget.*
 import io.github.cottonmc.cotton.gui.widget.data.Insets
 import io.github.cottonmc.cotton.gui.widget.data.VerticalAlignment
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityType
 import net.minecraft.entity.player.PlayerEntity
@@ -221,7 +219,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     }
 
     fun canStackGoInUpgradeSlot(stack: ItemStack, slot: BoatUpgradeSlot): Boolean {
-        return BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.slot?.contains(slot) ?: false
+        return BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.slots?.contains(slot) ?: false
     }
 
     fun onBoatUpgradeSlotChanged(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {

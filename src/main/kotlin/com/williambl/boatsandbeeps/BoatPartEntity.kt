@@ -81,8 +81,10 @@ class BoatPartEntity(parent: UpgradedBoatEntity, width: Float, height: Float) :
         return parent.interact(player, hand)
     }
 
-    override fun interactAt(player: PlayerEntity?, hitPos: Vec3d?, hand: Hand?): ActionResult {
-        return parent.interactAt(player, hitPos, hand)
+    override fun interactAt(player: PlayerEntity, hitPos: Vec3d, hand: Hand): ActionResult {
+        val partNumber = parent.partEntities.indexOf(this)
+        DistHelper.sendInteractAtPArtClientToServer(parent, hand, hitPos, partNumber)
+        return parent.interactAtPart(player, hand, hitPos, partNumber)
     }
 
     override fun getPickBlockStack(): ItemStack? {
