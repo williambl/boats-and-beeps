@@ -71,13 +71,13 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
             matrixStack.translate(-2.0, 0.0, 0.0)
         }
         matrixStack.pop()
-        for ((pos, blockstatefunc) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.6666667*idx, 0.0, 0.0), it.value.blockstate) } }) {
+        for ((pos, blockstatefunc) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.0*idx, 0.0, 0.0), it.value.blockstate) } }) {
             val blockstate = blockstatefunc.invoke(boatEntity)
             if (blockstate.renderType != BlockRenderType.INVISIBLE) {
                 matrixStack.push()
-                matrixStack.scale(-0.75f, -0.75f, 0.75f)
                 matrixStack.translate(-pos.x, pos.y, pos.z)
-                matrixStack.translate(-0.45, -0.25, 0.5)
+                matrixStack.scale(-0.75f, -0.75f, 0.75f)
+                matrixStack.translate(-0.35, -0.25, 0.5)
                 matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))
                 renderBlock(boatEntity, g, blockstate, matrixStack, vertexConsumerProvider, i)
                 matrixStack.pop()
