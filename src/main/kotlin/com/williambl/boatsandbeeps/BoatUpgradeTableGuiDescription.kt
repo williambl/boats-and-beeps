@@ -268,7 +268,12 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     }
 
     private fun createEntityForPart(newPart: Int): Entity? {
-        return null
+        val state = partsAndUpgrades
+        return if (newPart == 0 || state == null || newPart > state.first){
+            null
+        } else {
+            UpgradedBoatEntity(world, upgrades = listOf(state.second[newPart-1])).also { it.boatType = (blockInventory.getStack(0).item as UpgradedBoatItem).type }
+        }
     }
 
     companion object {
