@@ -75,10 +75,11 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
             val blockstate = blockstatefunc.invoke(boatEntity)
             if (blockstate.renderType != BlockRenderType.INVISIBLE) {
                 matrixStack.push()
-                matrixStack.translate(-pos.x, pos.y, pos.z)
-                matrixStack.scale(-0.75f, -0.75f, 0.75f)
-                matrixStack.translate(-0.35, -0.25, 0.5)
+                matrixStack.translate(pos.x, pos.y, pos.z)
                 matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))
+                matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0f))
+                matrixStack.scale(0.75f, 0.75f, 0.75f)
+                matrixStack.translate(-0.5, -0.2, -0.75)
                 renderBlock(boatEntity, g, blockstate, matrixStack, vertexConsumerProvider, i)
                 matrixStack.pop()
             }
