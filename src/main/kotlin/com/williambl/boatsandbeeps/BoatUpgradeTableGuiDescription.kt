@@ -272,7 +272,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
         return if (newPart == 0 || state == null || newPart > state.first){
             null
         } else {
-            UpgradedBoatEntity(world, upgrades = listOf(state.second[newPart-1])).also { it.boatType = (blockInventory.getStack(0).item as UpgradedBoatItem).type }
+            UpgradedBoatEntity(world, upgrades = listOf(state.second.getOrElse(newPart-1) { mapOf() })).also { it.boatType = (blockInventory.getStack(0).item as UpgradedBoatItem).type }
         }
     }
 
