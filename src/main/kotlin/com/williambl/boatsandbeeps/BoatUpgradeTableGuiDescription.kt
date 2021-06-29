@@ -1,5 +1,7 @@
 package com.williambl.boatsandbeeps
 
+import com.google.common.collect.BiMap
+import com.google.common.collect.ImmutableBiMap
 import io.github.cottonmc.cotton.gui.SyncedGuiDescription
 import io.github.cottonmc.cotton.gui.widget.*
 import io.github.cottonmc.cotton.gui.widget.data.Insets
@@ -12,7 +14,9 @@ import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.inventory.Inventory
 import net.minecraft.item.BoatItem
 import net.minecraft.item.ItemStack
+import net.minecraft.item.Items
 import net.minecraft.screen.ScreenHandlerContext
+import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.LiteralText
 import net.minecraft.util.Identifier
 import kotlin.properties.Delegates
@@ -24,7 +28,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     val root: WPlainPanel = WPlainPanel()
     val boatSlot: WItemSlot
     val upgradesPanel: WPlainPanel
-    val upgradeSlots: Map<BoatUpgradeSlot, WItemSlot>
+    val upgradeSlots: BiMap<BoatUpgradeSlot, WItemSlot>
     val entityView: WEntityView
     val partsPanel: WPlainPanel
     val currentPartLabel: WLabel
@@ -42,9 +46,9 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
         upgradesPanel = WPlainPanel()
         upgradesPanel.setSize(80, 54)
 
-        upgradeSlots = BoatUpgradeSlot.values().mapIndexed { idx, slot ->
-            slot to WItemSlot.of(blockInventory, idx+1)
-        }.toMap()
+        upgradeSlots = ImmutableBiMap.copyOf(BoatUpgradeSlot.values().mapIndexed { idx, slot ->
+            slot to WItemSlot.of(blockInventory, idx+1).setFilter { stack -> canStackGoInUpgradeSlot(stack, slot) }.also { it.addChangeListener(this::onBoatUpgradeSlotChanged) }
+        }.toMap())
 
         upgradesPanel.add(WSprite(boatSprite), 0, 2, 80, 50)
 
@@ -87,10 +91,21 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
 
     ///
 
-    override fun close(playerEntity: PlayerEntity?) {
+    override fun close(playerEntity: PlayerEntity) {
         super.close(playerEntity)
         context.run { _, _ ->
-            dropInventory(playerEntity, blockInventory)
+            dropStack(playerEntity, blockInventory.getStack(0))
+        }
+    }
+
+    fun dropStack(player: PlayerEntity, stack: ItemStack) {
+        if (!player.isAlive || player is ServerPlayerEntity && player.isDisconnected) {
+            player.dropItem(stack, false)
+        } else {
+            val playerInventory = player.inventory
+            if (playerInventory.player is ServerPlayerEntity) {
+                playerInventory.offerOrDrop(stack)
+            }
         }
     }
 
@@ -131,20 +146,39 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
         prevPartButton.isEnabled = newPart > 1
         nextPartButton.isEnabled = newPart < partsAndUpgrades?.first ?: 0
         currentPartLabel.text = LiteralText("Part: $newPart/${partsAndUpgrades?.first ?: 0}")
+        val upgradeSlotValues = BoatUpgradeSlot.values()
+        val upgrades = partsAndUpgrades?.second?.getOrNull(newPart-1)
+        for (upgradeslot in upgradeSlots.keys) {
+            blockInventory.setStack(
+                upgradeSlotValues.indexOf(upgradeslot) + 1,
+                upgrades?.let {
+                    BoatUpgrade.ITEM_TO_UPGRADE.inverse()[it[upgradeslot]]?.defaultStack
+                } ?: Items.AIR.defaultStack
+            )
+        }
         entityView.entity = createEntityForPart(newPart)
     }
 
     fun onPartAdded(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {
         inventory.setStack(index, ItemStack.EMPTY)
-        if (stack.item is BoatItem) {
-            modifyBoatState((partsAndUpgrades?.first ?: 0)+1, (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.add(mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT)) })
-        } else if (stack.item is UpgradedBoatItem) {
-            val otherState = readUpgradesAndParts(stack.getOrCreateSubTag("BoatData"))
-            modifyBoatState((partsAndUpgrades?.first ?: 0) + otherState.first, (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.addAll(otherState.second) })
+        when (stack.item) {
+            is BoatItem -> {
+                modifyBoatState(
+                    parts = (partsAndUpgrades?.first ?: 0)+1,
+                    upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.add(mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT)) }
+                )
+            }
+            is UpgradedBoatItem -> {
+                val otherState = readUpgradesAndParts(stack.getOrCreateSubTag("BoatData"))
+                modifyBoatState(
+                    parts = (partsAndUpgrades?.first ?: 0) + otherState.first,
+                    upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.addAll(otherState.second) }
+                )
+            }
         }
     }
 
-    fun modifyBoatState(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>>) {
+    fun modifyBoatState(parts: Int = partsAndUpgrades?.first ?: 0, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = partsAndUpgrades?.second ?: listOf()) {
         blockInventory.getStack(0).orCreateTag.let {
             it.remove("BoatData")
             it.put("BoatData", writeUpgradesAndParts(parts, upgrades))
@@ -152,8 +186,55 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
         }
     }
 
+    fun canStackGoInUpgradeSlot(stack: ItemStack, slot: BoatUpgradeSlot): Boolean {
+        return BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.slot?.contains(slot) ?: false
+    }
+
+    fun onBoatUpgradeSlotChanged(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {
+        var changeToMake: Pair<BoatUpgradeSlot, BoatUpgrade>? = null
+        when (val upgradeSlot = upgradeSlots.inverse()[slot]) {
+            BoatUpgradeSlot.FRONT -> {
+                if (stack.isEmpty) {
+                    changeToMake = Pair(upgradeSlot, BoatUpgrade.SEAT)
+                } else {
+                    BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.let {
+                        changeToMake = Pair(upgradeSlot, it)
+                    }
+                }
+            }
+            BoatUpgradeSlot.BACK -> {
+                if (stack.isEmpty) {
+                    changeToMake = Pair(upgradeSlot, BoatUpgrade.SEAT)
+                } else {
+                    BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.let {
+                        changeToMake = Pair(upgradeSlot, it)
+                    }
+                }
+            }
+            else -> {
+                if (upgradeSlot != null) {
+                    BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.let {
+                        changeToMake = Pair(upgradeSlot, it)
+                    }
+                }
+            }
+        }
+
+        if (changeToMake != null) {
+            modifyBoatState(
+                upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also {
+                    if (currentPart > 0) {
+                        val map = it[currentPart - 1].toMutableMap()
+                        map[changeToMake!!.first] = changeToMake!!.second
+                        it[currentPart - 1] = map
+                    }
+                }
+            )
+        }
+    }
+
     private fun createEntityForPart(newPart: Int): Entity? {
-        return null //TODO
+        return null
     }
 
     companion object {

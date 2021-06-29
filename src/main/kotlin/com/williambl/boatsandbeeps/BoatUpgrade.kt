@@ -1,10 +1,14 @@
 package com.williambl.boatsandbeeps
 
+import com.google.common.collect.BiMap
+import com.google.common.collect.HashBiMap
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder
 import net.fabricmc.fabric.api.registry.FuelRegistry
 import net.minecraft.block.BlockState
 import net.minecraft.block.Blocks
 import net.minecraft.entity.player.PlayerEntity
+import net.minecraft.item.Item
+import net.minecraft.item.Items
 import net.minecraft.particle.ParticleTypes
 import net.minecraft.state.property.Properties
 import net.minecraft.util.ActionResult
@@ -59,5 +63,11 @@ data class BoatUpgrade(
             }
         }))
         val BANNER = Registry.register(upgradesRegistry, Identifier("boats-and-beeps:banner"), BoatUpgrade(listOf(BoatUpgradeSlot.FRONT, BoatUpgradeSlot.BACK), "banner", { Blocks.BLACK_BANNER.defaultState }))
+
+        val ITEM_TO_UPGRADE: BiMap<Item, BoatUpgrade> = HashBiMap.create(mutableMapOf(
+            Items.CHEST to CHEST,
+            Items.FURNACE to FURNACE,
+            Items.WHITE_BANNER to BANNER
+        ))
     }
 }
