@@ -1,38 +1,34 @@
 package com.williambl.boatsandbeeps
 
 import io.github.cottonmc.cotton.gui.SyncedGuiDescription
-import io.github.cottonmc.cotton.gui.client.BackgroundPainter
-import io.github.cottonmc.cotton.gui.widget.WGridPanel
-import io.github.cottonmc.cotton.gui.widget.WItemSlot
-import io.github.cottonmc.cotton.gui.widget.WPlainPanel
-import io.github.cottonmc.cotton.gui.widget.WSprite
+import io.github.cottonmc.cotton.gui.widget.*
 import io.github.cottonmc.cotton.gui.widget.data.Insets
-import net.fabricmc.api.EnvType
-import net.fabricmc.api.Environment
+import io.github.cottonmc.cotton.gui.widget.data.VerticalAlignment
 import net.minecraft.entity.EntityType
-import net.minecraft.entity.passive.SheepEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.screen.ScreenHandlerContext
+import net.minecraft.text.LiteralText
 import net.minecraft.util.Identifier
 
 
 class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInventory, val context: ScreenHandlerContext) :
-    SyncedGuiDescription(boatUpgradeTableScreenHandlerType, syncId, playerInventory, getBlockInventory(context, 7), getBlockPropertyDelegate(context)) {
+    SyncedGuiDescription(boatUpgradeTableScreenHandlerType, syncId, playerInventory, getBlockInventory(context, 8), getBlockPropertyDelegate(context)) {
 
     val root: WPlainPanel = WPlainPanel()
     val boatSlot: WItemSlot
     val upgradesPanel: WPlainPanel
     val upgradeSlots: Map<BoatUpgradeSlot, WItemSlot>
     val entityView: WEntityView
+    val partsPanel: WPlainPanel
 
     init {
         setRootPanel(root)
         root.setSize(140, 200)
         root.insets = Insets.ROOT_PANEL
         boatSlot = WItemSlot.of(blockInventory, 0)
-        root.add(boatSlot, 18, 36)
+        root.add(boatSlot, 18, 18)
 
         upgradesPanel = WPlainPanel()
         upgradesPanel.setSize(80, 54)
@@ -54,6 +50,16 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
 
         entityView = WEntityView(BoatEntity(EntityType.BOAT, world))
         root.add(entityView, 72, 72, 90, 36)
+
+        partsPanel = WPlainPanel()
+        partsPanel.setSize(72, 45)
+        partsPanel.add(WLabel("Part: 1"), 0, 0)
+        partsPanel.add(WButton(LiteralText("<")), 0, 9)
+        partsPanel.add(WButton(LiteralText(">")), 18, 9)
+        partsPanel.add(WLabel("Add Part:").setVerticalAlignment(VerticalAlignment.CENTER), 0, 30)
+        partsPanel.add(WItemSlot.of(blockInventory, 7), 54, 30)
+
+        root.add(partsPanel, 0, 54)
 
         root.add(this.createPlayerInventoryPanel(), 0, 108)
 
