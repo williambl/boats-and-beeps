@@ -6,6 +6,8 @@ import io.github.cottonmc.cotton.gui.SyncedGuiDescription
 import io.github.cottonmc.cotton.gui.widget.*
 import io.github.cottonmc.cotton.gui.widget.data.Insets
 import io.github.cottonmc.cotton.gui.widget.data.VerticalAlignment
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityType
 import net.minecraft.entity.player.PlayerEntity
@@ -15,15 +17,16 @@ import net.minecraft.inventory.Inventory
 import net.minecraft.item.BoatItem
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
-import net.minecraft.screen.ScreenHandlerContext
+import net.minecraft.screen.*
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.LiteralText
 import net.minecraft.util.Identifier
+import kotlin.math.max
 import kotlin.properties.Delegates
 
 
 class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInventory, val context: ScreenHandlerContext) :
-    SyncedGuiDescription(boatUpgradeTableScreenHandlerType, syncId, playerInventory, getBlockInventory(context, 8), getBlockPropertyDelegate(context)) {
+    SyncedGuiDescription(boatUpgradeTableScreenHandlerType, syncId, playerInventory, getBlockInventory(context, 8), null) {
 
     val root: WPlainPanel = WPlainPanel()
     val boatSlot: WItemSlot
@@ -86,9 +89,40 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     /// STATE
 
     var hasBoat = false
-    var currentPart: Int by Delegates.observable(0) { prop, old, new -> onChangePart(new) }
+    var currentPart: Int
+        get() = currentPartProperty.get()
+        set(value) = currentPartProperty.set(value)
     var partsAndUpgrades: Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgrade>>>? by Delegates.observable(null) { prop, old, new -> onChangePart(currentPart) } // never set me except for when reading from the itemstack
 
+    val currentPartProperty: Property
+
+    init {
+        setPropertyDelegate(object: PropertyDelegate {
+            var currentPart: Int by Delegates.observable(0) { prop, old, new -> onChangePart(new) }
+
+            override fun size(): Int = 1
+
+            override fun get(index: Int): Int {
+                if (index == 0) {
+                    return currentPart;
+                }
+                // Unknown property IDs will fall back to -1
+                return -1;
+            }
+
+            override fun set(index: Int, value: Int) {
+                if (index == 0) {
+                    currentPart = value
+                    if (world.isClient) {
+                        DistHelper.sendSyncPartClientToServer(syncId, currentPart)
+                    }
+                }
+            }
+        })
+
+        currentPartProperty = Property.create(getPropertyDelegate(), 0)
+        addProperty(currentPartProperty)
+    }
     ///
 
     override fun close(playerEntity: PlayerEntity) {
@@ -123,7 +157,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
         }
         hasBoat = true
         partsAndUpgrades = readUpgradesAndParts(inventory.getStack(index).getOrCreateSubTag("BoatData"))
-        currentPart = 1
+        currentPart = max(currentPart, 1)
         addPartSlot.isModifiable = true
     }
 
@@ -179,11 +213,11 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     }
 
     fun modifyBoatState(parts: Int = partsAndUpgrades?.first ?: 0, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = partsAndUpgrades?.second ?: listOf()) {
-        blockInventory.getStack(0).orCreateTag.let {
-            it.remove("BoatData")
-            it.put("BoatData", writeUpgradesAndParts(parts, upgrades))
-            partsAndUpgrades = readUpgradesAndParts(it.getCompound("BoatData"))
-        }
+        val tag = blockInventory.getStack(0).orCreateTag.copy()
+        tag.remove("BoatData")
+        tag.put("BoatData", writeUpgradesAndParts(parts, upgrades))
+        blockInventory.getStack(0).tag = tag
+        partsAndUpgrades = readUpgradesAndParts(tag.getCompound("BoatData"))
     }
 
     fun canStackGoInUpgradeSlot(stack: ItemStack, slot: BoatUpgradeSlot): Boolean {

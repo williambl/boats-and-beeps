@@ -44,6 +44,16 @@ val boatUpgradeTable = Registry.register(Registry.BLOCK, Identifier("boats-and-b
 val boatUpgradeTableItem = Registry.register(Registry.ITEM, Identifier("boats-and-beeps:boat_upgrade_table"), BlockItem(boatUpgradeTable, Item.Settings().group(ItemGroup.DECORATIONS)))
 
 fun init() {
+    ServerPlayNetworking.registerGlobalReceiver(Identifier("boats-and-beeps:sync_part")) { server, player, handler, buf, sender ->
+        val syncId = buf.readVarInt()
+        val value = buf.readVarInt()
+        server.execute {
+            val screenHandler = player.currentScreenHandler
+            if (screenHandler.syncId == syncId) {
+                screenHandler.setProperty(0, value)
+            }
+        }
+    }
 }
 
 fun UpgradedBoatEntity.getAsNbt(): NbtCompound {
