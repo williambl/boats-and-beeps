@@ -7,11 +7,10 @@ import net.fabricmc.fabric.api.registry.FuelRegistry
 import net.minecraft.block.AbstractBannerBlock
 import net.minecraft.block.BlockState
 import net.minecraft.block.Blocks
+import net.minecraft.block.SkullBlock
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
-import net.minecraft.item.Item
-import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
+import net.minecraft.item.*
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.particle.ParticleTypes
 import net.minecraft.screen.GenericContainerScreenHandler
@@ -99,11 +98,23 @@ data class BoatUpgradeType(
                     blockstate = { _, _ -> banner.defaultState })) }
             .toMap()
 
+        val SKULLS = Registry.ITEM.asSequence()
+            .filterIsInstance<WallStandingBlockItem>()
+            .filter { it.block is SkullBlock }
+            .map { it to Registry.ITEM.getId(it) }
+            .map { (skull, id) -> skull to Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:${id.toString().replace(":", ".")}"), BoatUpgradeType(
+                slots = listOf(BoatUpgradeSlot.BOW),
+                blockstate = { _, _ -> skull.block.defaultState },
+                getExtraDataFromItem = { stack -> stack.tag?.apply { put("BlockEntityTag", this.copy()) }} ))}
+            .toMap()
+
+
         val ITEM_TO_UPGRADE_TYPE: BiMap<Item, BoatUpgradeType> = HashBiMap.create(mutableMapOf(
             Items.CHEST to CHEST,
             Items.FURNACE to FURNACE,
         ).apply {
             putAll(BANNERS.mapKeys { it.key.asItem() })
+            putAll(SKULLS)
         })
     }
 }
