@@ -1,4 +1,4 @@
-package com.williambl.boatsandbeeps
+package com.williambl.boatsandbeeps.upgrade
 
 import net.minecraft.util.math.Vec3d
 

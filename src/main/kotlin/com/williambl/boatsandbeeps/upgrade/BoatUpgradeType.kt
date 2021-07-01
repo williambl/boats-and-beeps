@@ -1,8 +1,8 @@
-package com.williambl.boatsandbeeps
+package com.williambl.boatsandbeeps.upgrade
 
 import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
-import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder
+import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity
 import net.fabricmc.fabric.api.registry.FuelRegistry
 import net.minecraft.block.AbstractBannerBlock
 import net.minecraft.block.BlockState
@@ -10,7 +10,10 @@ import net.minecraft.block.Blocks
 import net.minecraft.block.SkullBlock
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
-import net.minecraft.item.*
+import net.minecraft.item.Item
+import net.minecraft.item.ItemStack
+import net.minecraft.item.Items
+import net.minecraft.item.WallStandingBlockItem
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.particle.ParticleTypes
 import net.minecraft.screen.GenericContainerScreenHandler
@@ -24,9 +27,6 @@ import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.Vec3d
 import net.minecraft.util.registry.Registry
-import net.minecraft.util.registry.SimpleRegistry
-
-val UPGRADES_REGISTRY: SimpleRegistry<BoatUpgradeType> = FabricRegistryBuilder.createSimple(BoatUpgradeType::class.java, Identifier("boats-and-beeps:boat_upgrades")).buildAndRegister()
 
 data class BoatUpgradeType(
     val slots: List<BoatUpgradeSlot>,
@@ -40,16 +40,24 @@ data class BoatUpgradeType(
     fun create(): BoatUpgrade = BoatUpgrade(this)
 
     companion object {
-        val SEAT = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:seat"), BoatUpgradeType(
-            slots = listOf(BoatUpgradeSlot.FRONT, BoatUpgradeSlot.BACK)
-        ))
+        val SEAT = Registry.register(
+            UPGRADES_REGISTRY, Identifier("boats-and-beeps:seat"), BoatUpgradeType(
+                slots = listOf(BoatUpgradeSlot.FRONT, BoatUpgradeSlot.BACK)
+            )
+        )
 
         val CHEST = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:chest"), BoatUpgradeType(
             slots = listOf(BoatUpgradeSlot.FRONT, BoatUpgradeSlot.BACK),
             blockstate = { _, _ -> Blocks.CHEST.defaultState },
             interactSpecificallyMethod = { boat, player, hand, part, slot, data ->
                 player.openHandledScreen(object : NamedScreenHandlerFactory {
-                    override fun createMenu(syncId: Int, inv: PlayerInventory, player: PlayerEntity): ScreenHandler = GenericContainerScreenHandler.createGeneric9x3(syncId, inv, boat.inventories[part][slot])
+                    override fun createMenu(
+                        syncId: Int,
+                        inv: PlayerInventory,
+                        player: PlayerEntity
+                    ): ScreenHandler =
+                        GenericContainerScreenHandler.createGeneric9x3(syncId, inv, boat.inventories[part][slot])
+
                     override fun getDisplayName(): Text = TranslatableText("container.chest")
                 })
                 ActionResult.SUCCESS
@@ -58,7 +66,14 @@ data class BoatUpgradeType(
 
         val FURNACE = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:furnace"), BoatUpgradeType(
             slots = listOf(BoatUpgradeSlot.FRONT, BoatUpgradeSlot.BACK),
-            blockstate = { boat, data -> Blocks.FURNACE.defaultState.let { if (boat.isLit) it.with(Properties.LIT, true) else it } },
+            blockstate = { boat, data ->
+                Blocks.FURNACE.defaultState.let {
+                    if (boat.isLit) it.with(
+                        Properties.LIT,
+                        true
+                    ) else it
+                }
+            },
             interactMethod = { boat, player, hand, data ->
                 val fuelAmount = FuelRegistry.INSTANCE.get(player.getStackInHand(hand).item) ?: 0
                 if (fuelAmount > 0) {
@@ -72,7 +87,8 @@ data class BoatUpgradeType(
             }, tickMethod = { boat, upgradePos, data ->
                 if (boat.fuel > 0) {
                     boat.fuel--
-                    val newVel = boat.velocity.add(boat.rotationVector.multiply(1.0, 0.0, 1.0).normalize().multiply(0.01))
+                    val newVel =
+                        boat.velocity.add(boat.rotationVector.multiply(1.0, 0.0, 1.0).normalize().multiply(0.01))
                     if (newVel.lengthSquared() <= 64) {
                         boat.velocity = newVel
                     }
@@ -93,21 +109,26 @@ data class BoatUpgradeType(
         val BANNERS = Registry.BLOCK.asSequence()
             .filterIsInstance(AbstractBannerBlock::class.java)
             .map { it to Registry.BLOCK.getId(it) }
-            .map { (banner, id) -> banner to Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:${id.toString().replace(":", ".")}"), BoatUpgradeType(
+            .map { (banner, id) -> banner to Registry.register(
+                UPGRADES_REGISTRY, Identifier("boats-and-beeps:${id.toString().replace(":", ".")}"), BoatUpgradeType(
                     slots = listOf(BoatUpgradeSlot.FRONT, BoatUpgradeSlot.BACK),
-                    blockstate = { _, _ -> banner.defaultState })) }
+                    blockstate = { _, _ -> banner.defaultState })
+            )
+            }
             .toMap()
 
         val SKULLS = Registry.ITEM.asSequence()
             .filterIsInstance<WallStandingBlockItem>()
             .filter { it.block is SkullBlock }
             .map { it to Registry.ITEM.getId(it) }
-            .map { (skull, id) -> skull to Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:${id.toString().replace(":", ".")}"), BoatUpgradeType(
-                slots = listOf(BoatUpgradeSlot.BOW),
-                blockstate = { _, _ -> skull.block.defaultState },
-                getExtraDataFromItem = { stack -> stack.tag?.apply { put("BlockEntityTag", this.copy()) }} ))}
+            .map { (skull, id) -> skull to Registry.register(UPGRADES_REGISTRY,
+                Identifier("boats-and-beeps:${id.toString().replace(":", ".")}"),
+                BoatUpgradeType(
+                    slots = listOf(BoatUpgradeSlot.BOW),
+                    blockstate = { _, _ -> skull.block.defaultState },
+                    getExtraDataFromItem = { stack -> stack.tag?.apply { put("BlockEntityTag", this.copy()) } }))
+            }
             .toMap()
-
 
         val ITEM_TO_UPGRADE_TYPE: BiMap<Item, BoatUpgradeType> = HashBiMap.create(mutableMapOf(
             Items.CHEST to CHEST,
@@ -116,23 +137,6 @@ data class BoatUpgradeType(
             putAll(BANNERS.mapKeys { it.key.asItem() })
             putAll(SKULLS)
         })
+
     }
-}
-
-fun createUpgrade(stack: ItemStack): BoatUpgrade? {
-    val type = BoatUpgradeType.ITEM_TO_UPGRADE_TYPE[stack.item] ?: return null
-    val data = type.getExtraDataFromItem.invoke(stack)
-    return BoatUpgrade(type, data)
-}
-
-data class BoatUpgrade(val type: BoatUpgradeType, val data: NbtCompound? = null) {
-    fun getBlockstate(boat: UpgradedBoatEntity): BlockState = type.blockstate(boat, data)
-
-    fun interact(boat: UpgradedBoatEntity, player: PlayerEntity, hand: Hand): ActionResult =
-        type.interactMethod(boat, player, hand, data)
-
-    fun interactSpecifically(boat: UpgradedBoatEntity, player: PlayerEntity, hand: Hand, part: Int, slot: BoatUpgradeSlot): ActionResult =
-        type.interactSpecificallyMethod(boat, player, hand, part, slot, data)
-
-    fun tick(boat: UpgradedBoatEntity, position: Vec3d) = type.tickMethod(boat, position, data)
 }

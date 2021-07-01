@@ -11,7 +11,7 @@ import net.minecraft.util.math.Vec3d;
 import java.util.UUID;
 
 public class ExtraDataEntitySpawnS2CPacket extends EntitySpawnS2CPacket {
-    NbtCompound extraData;
+    public NbtCompound extraData;
     public ExtraDataEntitySpawnS2CPacket(int id, UUID uuid, double x, double y, double z, float pitch, float yaw, EntityType<?> entityTypeId, int entityData, Vec3d velocity) {
         super(id, uuid, x, y, z, pitch, yaw, entityTypeId, entityData, velocity);
     }

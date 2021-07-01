@@ -1,5 +1,6 @@
-package com.williambl.boatsandbeeps
+package com.williambl.boatsandbeeps.boat
 
+import com.williambl.boatsandbeeps.DistHelper
 import com.williambl.multipartentities.CollidingPartEntity
 import net.minecraft.entity.Entity
 import net.minecraft.entity.LivingEntity

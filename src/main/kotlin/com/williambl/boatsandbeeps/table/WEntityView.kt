@@ -1,4 +1,4 @@
-package com.williambl.boatsandbeeps
+package com.williambl.boatsandbeeps.table
 
 import com.mojang.blaze3d.systems.RenderSystem
 import io.github.cottonmc.cotton.gui.client.BackgroundPainter
@@ -11,8 +11,6 @@ import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.Entity
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.Vec3f
-import kotlin.math.atan
-import kotlin.math.sin
 
 class WEntityView(var entity: Entity? = null): WWidget() {
 

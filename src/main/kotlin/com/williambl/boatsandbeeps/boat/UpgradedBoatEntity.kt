@@ -1,6 +1,13 @@
-package com.williambl.boatsandbeeps
+package com.williambl.boatsandbeeps.boat
 
+import com.williambl.boatsandbeeps.ExtraDataEntitySpawnS2CPacket
+import com.williambl.boatsandbeeps.getAsNbt
 import com.williambl.boatsandbeeps.mixin.BoatEntityAccessor
+import com.williambl.boatsandbeeps.readPartsAndUpgrades
+import com.williambl.boatsandbeeps.upgrade.BoatUpgrade
+import com.williambl.boatsandbeeps.upgrade.BoatUpgradeSlot
+import com.williambl.boatsandbeeps.upgrade.BoatUpgradeType
+import com.williambl.boatsandbeeps.upgradedBoatEntityType
 import com.williambl.multipartentities.MultipartEntity
 import net.minecraft.block.BlockState
 import net.minecraft.block.ShapeContext

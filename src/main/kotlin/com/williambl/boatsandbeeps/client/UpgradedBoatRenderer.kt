@@ -1,6 +1,6 @@
 package com.williambl.boatsandbeeps.client
 
-import com.williambl.boatsandbeeps.UpgradedBoatEntity
+import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity
 import com.williambl.boatsandbeeps.mixin.BlockRenderManagerAccessor
 import net.minecraft.block.BlockRenderType
 import net.minecraft.block.BlockState

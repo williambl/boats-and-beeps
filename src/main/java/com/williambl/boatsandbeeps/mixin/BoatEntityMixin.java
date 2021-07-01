@@ -1,6 +1,6 @@
 package com.williambl.boatsandbeeps.mixin;
 
-import com.williambl.boatsandbeeps.UpgradedBoatEntity;
+import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity;
 import net.minecraft.entity.vehicle.BoatEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

@@ -1,7 +1,11 @@
-package com.williambl.boatsandbeeps
+package com.williambl.boatsandbeeps.table
 
 import com.google.common.collect.BiMap
 import com.google.common.collect.ImmutableBiMap
+import com.williambl.boatsandbeeps.*
+import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity
+import com.williambl.boatsandbeeps.boat.UpgradedBoatItem
+import com.williambl.boatsandbeeps.upgrade.*
 import io.github.cottonmc.cotton.gui.SyncedGuiDescription
 import io.github.cottonmc.cotton.gui.widget.*
 import io.github.cottonmc.cotton.gui.widget.data.Insets
@@ -197,7 +201,8 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
             is BoatItem -> {
                 modifyBoatState(
                     parts = (partsAndUpgrades?.first ?: 0)+1,
-                    upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.add(mapOf(BoatUpgradeSlot.FRONT to BoatUpgradeType.SEAT.create(), BoatUpgradeSlot.BACK to BoatUpgradeType.SEAT.create())) }
+                    upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.add(mapOf(
+                        BoatUpgradeSlot.FRONT to BoatUpgradeType.SEAT.create(), BoatUpgradeSlot.BACK to BoatUpgradeType.SEAT.create())) }
                 )
             }
             is UpgradedBoatItem -> {
@@ -223,7 +228,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     }
 
     fun onBoatUpgradeSlotChanged(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {
-        var changeToMake: Pair<BoatUpgradeSlot, BoatUpgrade>? = null
+        var changeToMake: Pair<BoatUpgradeSlot, BoatUpgrade?>? = null
         when (val upgradeSlot = upgradeSlots.inverse()[slot]) {
             BoatUpgradeSlot.FRONT -> {
                 if (stack.isEmpty) {
@@ -244,9 +249,14 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
                 }
             }
             else -> {
+
                 if (upgradeSlot != null) {
-                    createUpgrade(stack)?.let {
-                        changeToMake = Pair(upgradeSlot, it)
+                    if (stack.isEmpty) {
+                        changeToMake = Pair(upgradeSlot, null)
+                    } else {
+                        createUpgrade(stack)?.let {
+                            changeToMake = Pair(upgradeSlot, it)
+                        }
                     }
                 }
             }
@@ -257,7 +267,13 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
                 upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also {
                     if (currentPart > 0) {
                         val map = it[currentPart - 1].toMutableMap()
-                        map[changeToMake!!.first] = changeToMake!!.second
+                        if (changeToMake?.second == null) {
+                            map.remove(changeToMake!!.first)
+                        } else {
+                            changeToMake?.second?.let { upgrade ->
+                                map[changeToMake!!.first] = upgrade
+                            }
+                        }
                         it[currentPart - 1] = map
                     }
                 }

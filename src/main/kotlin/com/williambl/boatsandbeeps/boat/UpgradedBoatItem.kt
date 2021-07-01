@@ -1,6 +1,12 @@
-package com.williambl.boatsandbeeps
+package com.williambl.boatsandbeeps.boat
 
 import com.williambl.boatsandbeeps.mixin.BoatItemAccessor
+import com.williambl.boatsandbeeps.readPartsAndUpgrades
+import com.williambl.boatsandbeeps.upgrade.BoatUpgrade
+import com.williambl.boatsandbeeps.upgrade.BoatUpgradeSlot
+import com.williambl.boatsandbeeps.upgrade.BoatUpgradeType
+import com.williambl.boatsandbeeps.upgradedBoatItems
+import com.williambl.boatsandbeeps.writePartsAndUpgrades
 import net.minecraft.entity.Entity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.vehicle.BoatEntity
@@ -65,7 +71,10 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
 
     override fun getDefaultStack(): ItemStack {
         return super.getDefaultStack().also {
-            it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade(BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgrade(BoatUpgradeType.SEAT)) }))
+            it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
+                BoatUpgradeSlot.FRONT to BoatUpgrade(
+                    BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgrade(BoatUpgradeType.SEAT)
+            ) }))
         }
     }
 
@@ -84,7 +93,9 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 val nbt = stack.tag
                 return ItemStack(upgradedBoatItems[type], stack.count)
                     .also { it.tag = nbt }
-                    .also { it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade(BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgrade(BoatUpgradeType.SEAT)) })) }
+                    .also { it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
+                        BoatUpgradeSlot.FRONT to BoatUpgrade(
+                            BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgrade(BoatUpgradeType.SEAT)) })) }
             }
             return ItemStack.EMPTY
         }

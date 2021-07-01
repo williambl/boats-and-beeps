@@ -1,5 +1,12 @@
 package com.williambl.boatsandbeeps
 
+import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity
+import com.williambl.boatsandbeeps.boat.UpgradedBoatItem
+import com.williambl.boatsandbeeps.table.BoatUpgradeTableBlock
+import com.williambl.boatsandbeeps.table.BoatUpgradeTableGuiDescription
+import com.williambl.boatsandbeeps.upgrade.BoatUpgrade
+import com.williambl.boatsandbeeps.upgrade.BoatUpgradeSlot
+import com.williambl.boatsandbeeps.upgrade.UPGRADES_REGISTRY
 import net.fabricmc.fabric.api.`object`.builder.v1.entity.FabricEntityTypeBuilder
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry

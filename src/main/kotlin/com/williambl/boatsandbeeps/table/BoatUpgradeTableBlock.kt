@@ -1,11 +1,10 @@
-package com.williambl.boatsandbeeps
+package com.williambl.boatsandbeeps.table
 
 import net.minecraft.block.Block
 import net.minecraft.block.BlockState
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.screen.*
-import net.minecraft.stat.Stats
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.ActionResult

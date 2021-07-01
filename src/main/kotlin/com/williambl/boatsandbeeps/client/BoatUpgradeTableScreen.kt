@@ -1,6 +1,6 @@
 package com.williambl.boatsandbeeps.client
 
-import com.williambl.boatsandbeeps.BoatUpgradeTableGuiDescription
+import com.williambl.boatsandbeeps.table.BoatUpgradeTableGuiDescription
 import io.github.cottonmc.cotton.gui.client.CottonInventoryScreen
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.text.Text
