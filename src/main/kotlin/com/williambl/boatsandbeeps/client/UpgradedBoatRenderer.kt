@@ -82,11 +82,6 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
         for ((pos, stateAndData) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.0*idx, 0.0, 0.0), Pair(it.value.getBlockstate(boatEntity), it.value.data)) } }) {
             matrixStack.push()
             matrixStack.translate(pos.x, pos.y, pos.z)
-            matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))
-            matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0f))
-            matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(180.0f))
-            matrixStack.scale(0.75f, 0.75f, 0.75f)
-            matrixStack.translate(-0.5, -0.2, -0.25)
             renderBlock(stateAndData.first, stateAndData.second, matrixStack, vertexConsumerProvider, i)
             matrixStack.pop()
         }
@@ -113,6 +108,13 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
         light: Int
     ) {
         MinecraftClient.getInstance().blockRenderManager.run {
+            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))
+            matrices.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0f))
+            if (state.renderType != BlockRenderType.MODEL) {
+                matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(180.0f))
+            }
+            matrices.scale(0.75f, 0.75f, 0.75f)
+            matrices.translate(-0.5, -0.2, if (state.renderType == BlockRenderType.MODEL) -0.75 else -0.25)
             when (state.renderType) {
                 BlockRenderType.MODEL -> {
                     val bakedModel: BakedModel = this.getModel(state)
@@ -132,14 +134,16 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
                         OverlayTexture.DEFAULT_UV
                     )
                 }
-                BlockRenderType.ENTITYBLOCK_ANIMATED, BlockRenderType.INVISIBLE -> (this as BlockRenderManagerAccessor).builtinModelItemRenderer.render(
-                    ItemStack(state.block).also { it.tag = data },
-                    ModelTransformation.Mode.NONE,
-                    matrices,
-                    vertexConsumers,
-                    light,
-                    OverlayTexture.DEFAULT_UV
-                )
+                BlockRenderType.ENTITYBLOCK_ANIMATED, BlockRenderType.INVISIBLE -> {
+                    (this as BlockRenderManagerAccessor).builtinModelItemRenderer.render(
+                        ItemStack(state.block).also { it.tag = data },
+                        ModelTransformation.Mode.NONE,
+                        matrices,
+                        vertexConsumers,
+                        light,
+                        OverlayTexture.DEFAULT_UV
+                    )
+                }
                 else -> {}
             }
         }

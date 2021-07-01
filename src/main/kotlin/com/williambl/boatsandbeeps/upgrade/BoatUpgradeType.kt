@@ -3,6 +3,7 @@ package com.williambl.boatsandbeeps.upgrade
 import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity
+import com.williambl.boatsandbeeps.tater
 import net.fabricmc.fabric.api.registry.FuelRegistry
 import net.minecraft.block.AbstractBannerBlock
 import net.minecraft.block.BlockState
@@ -130,9 +131,15 @@ data class BoatUpgradeType(
             }
             .toMap()
 
+        val TATER = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:tater"), BoatUpgradeType(
+            slots = listOf(BoatUpgradeSlot.BOW),
+            blockstate = { _, _ -> tater.defaultState }
+        ))
+
         val ITEM_TO_UPGRADE_TYPE: BiMap<Item, BoatUpgradeType> = HashBiMap.create(mutableMapOf(
             Items.CHEST to CHEST,
             Items.FURNACE to FURNACE,
+            Items.POTATO to TATER
         ).apply {
             putAll(BANNERS.mapKeys { it.key.asItem() })
             putAll(SKULLS)

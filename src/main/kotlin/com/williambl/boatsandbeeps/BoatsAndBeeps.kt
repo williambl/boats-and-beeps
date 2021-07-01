@@ -50,6 +50,8 @@ val boatUpgradeTableScreenHandlerType = ScreenHandlerRegistry.registerSimple(Ide
 val boatUpgradeTable = Registry.register(Registry.BLOCK, Identifier("boats-and-beeps:boat_upgrade_table"), BoatUpgradeTableBlock(AbstractBlock.Settings.of(Material.WOOD)))
 val boatUpgradeTableItem = Registry.register(Registry.ITEM, Identifier("boats-and-beeps:boat_upgrade_table"), BlockItem(boatUpgradeTable, Item.Settings().group(ItemGroup.DECORATIONS)))
 
+val tater = Registry.register(Registry.BLOCK, Identifier("boats-and-beeps:tater"), BoatUpgradeTableBlock(AbstractBlock.Settings.of(Material.ORGANIC_PRODUCT)))
+
 fun init() {
     ServerPlayNetworking.registerGlobalReceiver(Identifier("boats-and-beeps:sync_part")) { server, player, handler, buf, sender ->
         val syncId = buf.readVarInt()
