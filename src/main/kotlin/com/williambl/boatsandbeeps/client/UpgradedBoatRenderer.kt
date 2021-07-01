@@ -84,8 +84,9 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
             matrixStack.translate(pos.x, pos.y, pos.z)
             matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))
             matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0f))
+            matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(180.0f))
             matrixStack.scale(0.75f, 0.75f, 0.75f)
-            matrixStack.translate(-0.5, -0.2, -0.75)
+            matrixStack.translate(-0.5, -0.2, -0.25)
             renderBlock(stateAndData.first, stateAndData.second, matrixStack, vertexConsumerProvider, i)
             matrixStack.pop()
         }
