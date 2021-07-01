@@ -78,8 +78,7 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
             matrixStack.translate(-2.0, 0.0, 0.0)
         }
         matrixStack.pop()
-        for ((pos, blockstatefunc) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.0*idx, 0.0, 0.0), it.value.blockstate) } }) {
-            val blockstate = blockstatefunc.invoke(boatEntity)
+        for ((pos, blockstate) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.0*idx, 0.0, 0.0), it.value.getBlockstate(boatEntity)) } }) {
             matrixStack.push()
             matrixStack.translate(pos.x, pos.y, pos.z)
             matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))

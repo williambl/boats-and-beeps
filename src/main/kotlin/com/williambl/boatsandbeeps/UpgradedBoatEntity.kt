@@ -9,13 +9,11 @@ import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.EntityPose
 import net.minecraft.entity.LivingEntity
 import net.minecraft.entity.data.DataTracker
-import net.minecraft.entity.data.TrackedDataHandler
 import net.minecraft.entity.data.TrackedDataHandlerRegistry
 import net.minecraft.entity.mob.WaterCreatureEntity
 import net.minecraft.entity.passive.AnimalEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.vehicle.BoatEntity
-import net.minecraft.inventory.Inventory
 import net.minecraft.inventory.SimpleInventory
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.network.Packet
@@ -31,11 +29,10 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Vec3d
 import net.minecraft.util.shape.VoxelShapes
 import net.minecraft.world.World
-import java.sql.DataTruncation
 import kotlin.math.max
 import kotlin.properties.Delegates
 
-class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialParts: Int = 1, var upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = listOf())
+class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialParts: Int = 1, var upgrades: List<Map<BoatUpgradeSlot, BoatUpgradeInstance>> = listOf())
     : BoatEntity(upgradedBoatEntityType, world), MultipartEntity {
 
     init {
@@ -56,7 +53,7 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
         get() = dataTracker.get(isLitKey)
         set(value) = dataTracker.set(isLitKey, value)
 
-    var inventories: List<Map<BoatUpgradeSlot, SimpleInventory?>> = upgrades.map { it.map { upgrade -> (upgrade.key) to (if (upgrade.value == BoatUpgrade.CHEST) SimpleInventory(27) else null) }.toMap() }
+    var inventories: List<Map<BoatUpgradeSlot, SimpleInventory?>> = upgrades.map { it.map { upgrade -> (upgrade.key) to (if (upgrade.value.type == BoatUpgradeType.CHEST) SimpleInventory(27) else null) }.toMap() }
 
     override fun canAddPassenger(passenger: Entity): Boolean {
         return passengerList.size < getSeats().size
@@ -85,7 +82,7 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
 
     private fun getSeats(): List<Vec3d> = upgrades.flatMapIndexed { index, map ->
         map.map { (slot, upgrade) ->
-            if (upgrade == BoatUpgrade.SEAT) {
+            if (upgrade.type == BoatUpgradeType.SEAT) {
                 slot.position.add(-index * 2.0, 0.0, 0.0)
             } else {
                 null
@@ -98,7 +95,7 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
             part.partTick(i)
         }
         upgrades.forEachIndexed { idx, p -> p.forEach {
-            it.value.tickMethod(this, pos.add(it.key.position.add(-2.0*idx, 0.0, 0.0).rotateY(-yaw * 0.0175f - 1.57f)))
+            it.value.tick(this, pos.add(it.key.position.add(-2.0*idx, 0.0, 0.0).rotateY(-yaw * 0.0175f - 1.57f)))
         } }
         super.tick()
         val list = partEntities.flatMap { world.getOtherEntities(
@@ -130,7 +127,7 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
     override fun onSpawnPacket(packet: EntitySpawnS2CPacket) {
         super.onSpawnPacket(packet)
         if (packet is ExtraDataEntitySpawnS2CPacket) {
-            val extraData = readUpgradesAndParts(packet.extraData)
+            val extraData = readPartsAndUpgrades(packet.extraData)
             parts = extraData.first
             val entities = this.getParts()
             for (i in entities.indices) {
@@ -211,7 +208,7 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
         }
         for (upgrade in upgrades) {
             for (entry in upgrade) {
-                val result = entry.value.interactMethod(this, player, hand)
+                val result = entry.value.interact(this, player, hand)
                 if (result != ActionResult.PASS) {
                     return result
                 }
@@ -231,15 +228,15 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
 
     override fun readCustomDataFromNbt(nbt: NbtCompound) {
         super.readCustomDataFromNbt(nbt)
-        val extraData = readUpgradesAndParts(nbt.getCompound("BoatData"))
+        val extraData = readPartsAndUpgrades(nbt.getCompound("BoatData"))
         parts = extraData.first
         upgrades = extraData.second
-        inventories = upgrades.map { it.map { upgrade -> (upgrade.key) to (if (upgrade.value == BoatUpgrade.CHEST) SimpleInventory(27) else null) }.toMap() }
+        inventories = upgrades.map { it.map { upgrade -> (upgrade.key) to (if (upgrade.value.type == BoatUpgradeType.CHEST) SimpleInventory(27) else null) }.toMap() }
     }
 
     fun interactAtPart(player: PlayerEntity, hand: Hand, hitPos: Vec3d, partNumber: Int): ActionResult {
         val slot = if (hitPos.rotateY(-yaw).z < 0) BoatUpgradeSlot.FRONT else BoatUpgradeSlot.BACK
-        val result = upgrades[partNumber][slot]?.interactSpecificallyMethod?.invoke(this, player, hand, partNumber, slot) ?: ActionResult.PASS
+        val result = upgrades[partNumber][slot]?.interactSpecifically(this, player, hand, partNumber, slot) ?: ActionResult.PASS
         if (result != ActionResult.PASS) {
             return result
         }

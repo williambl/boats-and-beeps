@@ -40,7 +40,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 }
             }
             if (hitResult.type == HitResult.Type.BLOCK) {
-                val partsAndUpgrades = readUpgradesAndParts(itemStack.getOrCreateSubTag("BoatData"))
+                val partsAndUpgrades = readPartsAndUpgrades(itemStack.getOrCreateSubTag("BoatData"))
                 val entity = UpgradedBoatEntity(world, hitResult.pos, partsAndUpgrades.first, partsAndUpgrades.second)
                 entity.boatType = this.type
                 entity.yaw = user.yaw
@@ -65,7 +65,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
 
     override fun getDefaultStack(): ItemStack {
         return super.getDefaultStack().also {
-            it.orCreateTag.put("BoatData", writeUpgradesAndParts(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT) }))
+            it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgradeInstance(BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgradeInstance(BoatUpgradeType.SEAT)) }))
         }
     }
 
@@ -84,7 +84,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 val nbt = stack.tag
                 return ItemStack(upgradedBoatItems[type], stack.count)
                     .also { it.tag = nbt }
-                    .also { it.orCreateTag.put("BoatData", writeUpgradesAndParts(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT) })) }
+                    .also { it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgradeInstance(BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgradeInstance(BoatUpgradeType.SEAT)) })) }
             }
             return ItemStack.EMPTY
         }

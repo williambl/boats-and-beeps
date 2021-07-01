@@ -1,7 +1,6 @@
 package com.williambl.boatsandbeeps
 
 import net.fabricmc.fabric.api.`object`.builder.v1.entity.FabricEntityTypeBuilder
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry
 import net.minecraft.block.AbstractBlock
@@ -12,7 +11,6 @@ import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.item.*
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtList
-import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
 import net.minecraft.screen.ScreenHandlerContext
 import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
@@ -69,19 +67,22 @@ fun init() {
 }
 
 fun UpgradedBoatEntity.getAsNbt(): NbtCompound {
-    return writeUpgradesAndParts(parts, upgrades)
+    return writePartsAndUpgrades(parts, upgrades)
 }
 
-fun writeUpgradesAndParts(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>>): NbtCompound =
+fun writePartsAndUpgrades(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUpgradeInstance>>): NbtCompound =
     NbtCompound().apply {
         putInt("Parts", parts)
         put("Upgrades", NbtList().also { list ->
             upgrades.forEach { u ->
                 list.add(NbtCompound().apply {
                     u.forEach { (key, value) ->
-                        putString(
+                        put(
                             key.name,
-                            value.getId().toString()
+                            NbtCompound().apply {
+                                putString("Type", value.type.getId().toString())
+                                value.data?.let { put("Data", it) }
+                            }
                         )
                     }
                 })
@@ -89,14 +90,15 @@ fun writeUpgradesAndParts(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUp
         })
     }
 
-fun readUpgradesAndParts(nbt: NbtCompound): Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgrade>>> = Pair(
+fun readPartsAndUpgrades(nbt: NbtCompound): Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgradeInstance>>> = Pair(
     nbt.getInt("Parts").coerceAtLeast(1),
     nbt.getList("Upgrades", 10).map {
-        mutableMapOf<BoatUpgradeSlot, BoatUpgrade>().also { upgradesMap ->
+        mutableMapOf<BoatUpgradeSlot, BoatUpgradeInstance>().also { upgradesMap ->
             if (it is NbtCompound) {
                 for (slot in BoatUpgradeSlot.values()) {
                     if (it.contains(slot.name)) {
-                        upgradesMap[slot] = upgradesRegistry.get(Identifier(it.getString(slot.name))) ?: continue
+                        val upgrade = it.getCompound(slot.name)
+                        upgradesMap[slot] = BoatUpgradeInstance(UPGRADES_REGISTRY.get(Identifier(upgrade.getString("Type"))) ?: continue, if (upgrade.contains("Data")) upgrade.getCompound("Data") else null)
                     }
                 }
             }

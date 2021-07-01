@@ -90,7 +90,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     var currentPart: Int
         get() = currentPartProperty.get()
         set(value) = currentPartProperty.set(value)
-    var partsAndUpgrades: Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgrade>>>? by Delegates.observable(null) { prop, old, new -> onChangePart(currentPart) } // never set me except for when reading from the itemstack
+    var partsAndUpgrades: Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgradeInstance>>>? by Delegates.observable(null) { prop, old, new -> onChangePart(currentPart) } // never set me except for when reading from the itemstack
 
     val currentPartProperty: Property
 
@@ -154,7 +154,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
             inventory.setStack(index, UpgradedBoatItem.boatToUpgradedBoat(stack))
         }
         hasBoat = true
-        partsAndUpgrades = readUpgradesAndParts(inventory.getStack(index).getOrCreateSubTag("BoatData"))
+        partsAndUpgrades = readPartsAndUpgrades(inventory.getStack(index).getOrCreateSubTag("BoatData"))
         currentPart = max(currentPart, 1)
         addPartSlot.isModifiable = true
     }
@@ -184,7 +184,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
             blockInventory.setStack(
                 upgradeSlotValues.indexOf(upgradeslot) + 1,
                 upgrades?.let {
-                    BoatUpgrade.ITEM_TO_UPGRADE.inverse()[it[upgradeslot]]?.defaultStack
+                    BoatUpgradeType.ITEM_TO_UPGRADE_TYPE.inverse()[it[upgradeslot]?.type]?.defaultStack
                 } ?: Items.AIR.defaultStack
             )
         }
@@ -197,11 +197,11 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
             is BoatItem -> {
                 modifyBoatState(
                     parts = (partsAndUpgrades?.first ?: 0)+1,
-                    upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.add(mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade.SEAT, BoatUpgradeSlot.BACK to BoatUpgrade.SEAT)) }
+                    upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.add(mapOf(BoatUpgradeSlot.FRONT to BoatUpgradeType.SEAT.create(), BoatUpgradeSlot.BACK to BoatUpgradeType.SEAT.create())) }
                 )
             }
             is UpgradedBoatItem -> {
-                val otherState = readUpgradesAndParts(stack.getOrCreateSubTag("BoatData"))
+                val otherState = readPartsAndUpgrades(stack.getOrCreateSubTag("BoatData"))
                 modifyBoatState(
                     parts = (partsAndUpgrades?.first ?: 0) + otherState.first,
                     upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.addAll(otherState.second) }
@@ -210,42 +210,42 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
         }
     }
 
-    fun modifyBoatState(parts: Int = partsAndUpgrades?.first ?: 0, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = partsAndUpgrades?.second ?: listOf()) {
+    fun modifyBoatState(parts: Int = partsAndUpgrades?.first ?: 0, upgrades: List<Map<BoatUpgradeSlot, BoatUpgradeInstance>> = partsAndUpgrades?.second ?: listOf()) {
         val tag = blockInventory.getStack(0).orCreateTag.copy()
         tag.remove("BoatData")
-        tag.put("BoatData", writeUpgradesAndParts(parts, upgrades))
+        tag.put("BoatData", writePartsAndUpgrades(parts, upgrades))
         blockInventory.getStack(0).tag = tag
-        partsAndUpgrades = readUpgradesAndParts(tag.getCompound("BoatData"))
+        partsAndUpgrades = readPartsAndUpgrades(tag.getCompound("BoatData"))
     }
 
     fun canStackGoInUpgradeSlot(stack: ItemStack, slot: BoatUpgradeSlot): Boolean {
-        return BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.slots?.contains(slot) ?: false
+        return BoatUpgradeType.ITEM_TO_UPGRADE_TYPE[stack.item]?.slots?.contains(slot) ?: false
     }
 
     fun onBoatUpgradeSlotChanged(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {
-        var changeToMake: Pair<BoatUpgradeSlot, BoatUpgrade>? = null
+        var changeToMake: Pair<BoatUpgradeSlot, BoatUpgradeInstance>? = null
         when (val upgradeSlot = upgradeSlots.inverse()[slot]) {
             BoatUpgradeSlot.FRONT -> {
                 if (stack.isEmpty) {
-                    changeToMake = Pair(upgradeSlot, BoatUpgrade.SEAT)
+                    changeToMake = Pair(upgradeSlot, BoatUpgradeType.SEAT.create())
                 } else {
-                    BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.let {
+                    createUpgrade(stack)?.let {
                         changeToMake = Pair(upgradeSlot, it)
                     }
                 }
             }
             BoatUpgradeSlot.BACK -> {
                 if (stack.isEmpty) {
-                    changeToMake = Pair(upgradeSlot, BoatUpgrade.SEAT)
+                    changeToMake = Pair(upgradeSlot, BoatUpgradeType.SEAT.create())
                 } else {
-                    BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.let {
+                    createUpgrade(stack)?.let {
                         changeToMake = Pair(upgradeSlot, it)
                     }
                 }
             }
             else -> {
                 if (upgradeSlot != null) {
-                    BoatUpgrade.ITEM_TO_UPGRADE[stack.item]?.let {
+                    createUpgrade(stack)?.let {
                         changeToMake = Pair(upgradeSlot, it)
                     }
                 }
