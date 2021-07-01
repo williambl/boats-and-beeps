@@ -18,6 +18,7 @@ import net.minecraft.client.render.model.json.ModelTransformation
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.item.ItemStack
+import net.minecraft.nbt.NbtCompound
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.MathHelper
@@ -78,14 +79,14 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
             matrixStack.translate(-2.0, 0.0, 0.0)
         }
         matrixStack.pop()
-        for ((pos, blockstate) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.0*idx, 0.0, 0.0), it.value.getBlockstate(boatEntity)) } }) {
+        for ((pos, stateAndData) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.0*idx, 0.0, 0.0), Pair(it.value.getBlockstate(boatEntity), it.value.data)) } }) {
             matrixStack.push()
             matrixStack.translate(pos.x, pos.y, pos.z)
             matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))
             matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0f))
             matrixStack.scale(0.75f, 0.75f, 0.75f)
             matrixStack.translate(-0.5, -0.2, -0.75)
-            renderBlock(blockstate, matrixStack, vertexConsumerProvider, i)
+            renderBlock(stateAndData.first, stateAndData.second, matrixStack, vertexConsumerProvider, i)
             matrixStack.pop()
         }
         matrixStack.push()
@@ -105,6 +106,7 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
 
     private fun renderBlock(
         state: BlockState,
+        data: NbtCompound?,
         matrices: MatrixStack,
         vertexConsumers: VertexConsumerProvider,
         light: Int
@@ -130,7 +132,7 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
                     )
                 }
                 BlockRenderType.ENTITYBLOCK_ANIMATED, BlockRenderType.INVISIBLE -> (this as BlockRenderManagerAccessor).builtinModelItemRenderer.render(
-                    ItemStack(state.block),
+                    ItemStack(state.block).also { it.tag = data },
                     ModelTransformation.Mode.NONE,
                     matrices,
                     vertexConsumers,

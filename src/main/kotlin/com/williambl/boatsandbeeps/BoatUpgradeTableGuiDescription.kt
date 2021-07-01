@@ -90,7 +90,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     var currentPart: Int
         get() = currentPartProperty.get()
         set(value) = currentPartProperty.set(value)
-    var partsAndUpgrades: Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgradeInstance>>>? by Delegates.observable(null) { prop, old, new -> onChangePart(currentPart) } // never set me except for when reading from the itemstack
+    var partsAndUpgrades: Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgrade>>>? by Delegates.observable(null) { prop, old, new -> onChangePart(currentPart) } // never set me except for when reading from the itemstack
 
     val currentPartProperty: Property
 
@@ -184,7 +184,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
             blockInventory.setStack(
                 upgradeSlotValues.indexOf(upgradeslot) + 1,
                 upgrades?.let {
-                    BoatUpgradeType.ITEM_TO_UPGRADE_TYPE.inverse()[it[upgradeslot]?.type]?.defaultStack
+                    BoatUpgradeType.ITEM_TO_UPGRADE_TYPE.inverse()[it[upgradeslot]?.type]?.defaultStack?.also { s -> s.tag = it[upgradeslot]?.data }
                 } ?: Items.AIR.defaultStack
             )
         }
@@ -210,7 +210,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
         }
     }
 
-    fun modifyBoatState(parts: Int = partsAndUpgrades?.first ?: 0, upgrades: List<Map<BoatUpgradeSlot, BoatUpgradeInstance>> = partsAndUpgrades?.second ?: listOf()) {
+    fun modifyBoatState(parts: Int = partsAndUpgrades?.first ?: 0, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = partsAndUpgrades?.second ?: listOf()) {
         val tag = blockInventory.getStack(0).orCreateTag.copy()
         tag.remove("BoatData")
         tag.put("BoatData", writePartsAndUpgrades(parts, upgrades))
@@ -223,7 +223,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     }
 
     fun onBoatUpgradeSlotChanged(slot: WItemSlot, inventory: Inventory, index: Int, stack: ItemStack) {
-        var changeToMake: Pair<BoatUpgradeSlot, BoatUpgradeInstance>? = null
+        var changeToMake: Pair<BoatUpgradeSlot, BoatUpgrade>? = null
         when (val upgradeSlot = upgradeSlots.inverse()[slot]) {
             BoatUpgradeSlot.FRONT -> {
                 if (stack.isEmpty) {

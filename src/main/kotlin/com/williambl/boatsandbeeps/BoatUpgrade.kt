@@ -5,13 +5,11 @@ import com.google.common.collect.HashBiMap
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder
 import net.fabricmc.fabric.api.registry.FuelRegistry
 import net.minecraft.block.AbstractBannerBlock
-import net.minecraft.block.Block
 import net.minecraft.block.BlockState
 import net.minecraft.block.Blocks
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.item.Item
-import net.minecraft.item.ItemConvertible
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
 import net.minecraft.nbt.NbtCompound
@@ -37,10 +35,10 @@ data class BoatUpgradeType(
     val interactMethod: (UpgradedBoatEntity, PlayerEntity, Hand, NbtCompound?) -> ActionResult = { _, _, _, _ -> ActionResult.PASS },
     val interactSpecificallyMethod: (UpgradedBoatEntity, PlayerEntity, Hand, Int, BoatUpgradeSlot, NbtCompound?) -> ActionResult = { _, _, _, _, _, _ -> ActionResult.PASS },
     val tickMethod: (UpgradedBoatEntity, Vec3d, NbtCompound?) -> Unit = { _, _, _ -> },
-    val getExtraDataFromItem: (ItemStack) -> NbtCompound? = { null }
+    val getExtraDataFromItem: (ItemStack) -> NbtCompound? = ItemStack::getTag
 ) {
     fun getId(): Identifier = UPGRADES_REGISTRY.getId(this) ?: throw NullPointerException()
-    fun create(): BoatUpgradeInstance = BoatUpgradeInstance(this)
+    fun create(): BoatUpgrade = BoatUpgrade(this)
 
     companion object {
         val SEAT = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:seat"), BoatUpgradeType(
@@ -93,27 +91,30 @@ data class BoatUpgradeType(
                 }
             }
         ))
-        val BANNER = Registry.register(upgradesRegistry, Identifier("boats-and-beeps:banner"), BoatUpgrade(
-            slots = listOf(BoatUpgradeSlot.FRONT, BoatUpgradeSlot.BACK),
-            name = "banner",
-            blockstate = { Blocks.BLACK_BANNER.defaultState }
-        ))
+        val BANNERS = Registry.BLOCK.asSequence()
+            .filterIsInstance(AbstractBannerBlock::class.java)
+            .map { it to Registry.BLOCK.getId(it) }
+            .map { (banner, id) -> banner to Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:${id.toString().replace(":", ".")}"), BoatUpgradeType(
+                    slots = listOf(BoatUpgradeSlot.FRONT, BoatUpgradeSlot.BACK),
+                    blockstate = { _, _ -> banner.defaultState })) }
+            .toMap()
 
-        val ITEM_TO_UPGRADE: BiMap<Item, BoatUpgrade> = HashBiMap.create(mutableMapOf(
+        val ITEM_TO_UPGRADE_TYPE: BiMap<Item, BoatUpgradeType> = HashBiMap.create(mutableMapOf(
             Items.CHEST to CHEST,
             Items.FURNACE to FURNACE,
-            Items.WHITE_BANNER to BANNER
-        ))
+        ).apply {
+            putAll(BANNERS.mapKeys { it.key.asItem() })
+        })
     }
 }
 
-fun createUpgrade(stack: ItemStack): BoatUpgradeInstance? {
+fun createUpgrade(stack: ItemStack): BoatUpgrade? {
     val type = BoatUpgradeType.ITEM_TO_UPGRADE_TYPE[stack.item] ?: return null
     val data = type.getExtraDataFromItem.invoke(stack)
-    return BoatUpgradeInstance(type, data)
+    return BoatUpgrade(type, data)
 }
 
-data class BoatUpgradeInstance(val type: BoatUpgradeType, val data: NbtCompound? = null) {
+data class BoatUpgrade(val type: BoatUpgradeType, val data: NbtCompound? = null) {
     fun getBlockstate(boat: UpgradedBoatEntity): BlockState = type.blockstate(boat, data)
 
     fun interact(boat: UpgradedBoatEntity, player: PlayerEntity, hand: Hand): ActionResult =

@@ -32,7 +32,7 @@ import net.minecraft.world.World
 import kotlin.math.max
 import kotlin.properties.Delegates
 
-class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialParts: Int = 1, var upgrades: List<Map<BoatUpgradeSlot, BoatUpgradeInstance>> = listOf())
+class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialParts: Int = 1, var upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = listOf())
     : BoatEntity(upgradedBoatEntityType, world), MultipartEntity {
 
     init {

@@ -65,7 +65,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
 
     override fun getDefaultStack(): ItemStack {
         return super.getDefaultStack().also {
-            it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgradeInstance(BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgradeInstance(BoatUpgradeType.SEAT)) }))
+            it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade(BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgrade(BoatUpgradeType.SEAT)) }))
         }
     }
 
@@ -84,7 +84,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 val nbt = stack.tag
                 return ItemStack(upgradedBoatItems[type], stack.count)
                     .also { it.tag = nbt }
-                    .also { it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgradeInstance(BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgradeInstance(BoatUpgradeType.SEAT)) })) }
+                    .also { it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(BoatUpgradeSlot.FRONT to BoatUpgrade(BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgrade(BoatUpgradeType.SEAT)) })) }
             }
             return ItemStack.EMPTY
         }

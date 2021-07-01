@@ -70,7 +70,7 @@ fun UpgradedBoatEntity.getAsNbt(): NbtCompound {
     return writePartsAndUpgrades(parts, upgrades)
 }
 
-fun writePartsAndUpgrades(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUpgradeInstance>>): NbtCompound =
+fun writePartsAndUpgrades(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>>): NbtCompound =
     NbtCompound().apply {
         putInt("Parts", parts)
         put("Upgrades", NbtList().also { list ->
@@ -90,15 +90,15 @@ fun writePartsAndUpgrades(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUp
         })
     }
 
-fun readPartsAndUpgrades(nbt: NbtCompound): Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgradeInstance>>> = Pair(
+fun readPartsAndUpgrades(nbt: NbtCompound): Pair<Int, List<Map<BoatUpgradeSlot, BoatUpgrade>>> = Pair(
     nbt.getInt("Parts").coerceAtLeast(1),
     nbt.getList("Upgrades", 10).map {
-        mutableMapOf<BoatUpgradeSlot, BoatUpgradeInstance>().also { upgradesMap ->
+        mutableMapOf<BoatUpgradeSlot, BoatUpgrade>().also { upgradesMap ->
             if (it is NbtCompound) {
                 for (slot in BoatUpgradeSlot.values()) {
                     if (it.contains(slot.name)) {
                         val upgrade = it.getCompound(slot.name)
-                        upgradesMap[slot] = BoatUpgradeInstance(UPGRADES_REGISTRY.get(Identifier(upgrade.getString("Type"))) ?: continue, if (upgrade.contains("Data")) upgrade.getCompound("Data") else null)
+                        upgradesMap[slot] = BoatUpgrade(UPGRADES_REGISTRY.get(Identifier(upgrade.getString("Type"))) ?: continue, if (upgrade.contains("Data")) upgrade.getCompound("Data") else null)
                     }
                 }
             }
