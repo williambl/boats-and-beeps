@@ -8,6 +8,7 @@
     "BoatItemAccessor"
   ],
   "client": [
+    "BlockRenderManagerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

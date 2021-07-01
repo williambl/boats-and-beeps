@@ -1,22 +1,29 @@
 package com.williambl.boatsandbeeps.client
 
 import com.williambl.boatsandbeeps.UpgradedBoatEntity
+import com.williambl.boatsandbeeps.mixin.BlockRenderManagerAccessor
 import net.minecraft.block.BlockRenderType
 import net.minecraft.block.BlockState
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.render.OverlayTexture
 import net.minecraft.client.render.RenderLayer
+import net.minecraft.client.render.RenderLayers
 import net.minecraft.client.render.VertexConsumerProvider
 import net.minecraft.client.render.entity.EntityRenderer
 import net.minecraft.client.render.entity.EntityRendererFactory
 import net.minecraft.client.render.entity.model.BoatEntityModel
 import net.minecraft.client.render.entity.model.EntityModelLayers
+import net.minecraft.client.render.model.BakedModel
+import net.minecraft.client.render.model.json.ModelTransformation
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.entity.vehicle.BoatEntity
+import net.minecraft.item.ItemStack
 import net.minecraft.util.Identifier
+import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.MathHelper
 import net.minecraft.util.math.Quaternion
 import net.minecraft.util.math.Vec3f
+import net.minecraft.world.BlockRenderView
 
 class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRenderer<UpgradedBoatEntity>(context) {
     private val texturesAndModels: Map<BoatEntity.Type, Pair<Identifier, BoatEntityModel>> = BoatEntity.Type.values().associate {
@@ -73,16 +80,14 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
         matrixStack.pop()
         for ((pos, blockstatefunc) in boatEntity.upgrades.flatMapIndexed { idx, entry -> entry.map { Pair(it.key.position.add(-2.0*idx, 0.0, 0.0), it.value.blockstate) } }) {
             val blockstate = blockstatefunc.invoke(boatEntity)
-            if (blockstate.renderType != BlockRenderType.INVISIBLE) {
-                matrixStack.push()
-                matrixStack.translate(pos.x, pos.y, pos.z)
-                matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))
-                matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0f))
-                matrixStack.scale(0.75f, 0.75f, 0.75f)
-                matrixStack.translate(-0.5, -0.2, -0.75)
-                renderBlock(boatEntity, g, blockstate, matrixStack, vertexConsumerProvider, i)
-                matrixStack.pop()
-            }
+            matrixStack.push()
+            matrixStack.translate(pos.x, pos.y, pos.z)
+            matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90.0f))
+            matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0f))
+            matrixStack.scale(0.75f, 0.75f, 0.75f)
+            matrixStack.translate(-0.5, -0.2, -0.75)
+            renderBlock(blockstate, matrixStack, vertexConsumerProvider, i)
+            matrixStack.pop()
         }
         matrixStack.push()
         val vertexConsumer2 = vertexConsumerProvider.getBuffer(RenderLayer.getWaterMask())
@@ -100,19 +105,41 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
     }
 
     private fun renderBlock(
-        entity: UpgradedBoatEntity,
-        delta: Float,
         state: BlockState,
         matrices: MatrixStack,
         vertexConsumers: VertexConsumerProvider,
         light: Int
     ) {
-        MinecraftClient.getInstance().blockRenderManager.renderBlockAsEntity(
-            state,
-            matrices,
-            vertexConsumers,
-            light,
-            OverlayTexture.DEFAULT_UV
-        )
+        MinecraftClient.getInstance().blockRenderManager.run {
+            when (state.renderType) {
+                BlockRenderType.MODEL -> {
+                    val bakedModel: BakedModel = this.getModel(state)
+                    val i: Int = (this as BlockRenderManagerAccessor).blockColors.getColor(state, null as BlockRenderView?, null as BlockPos?, 0)
+                    val f = (i shr 16 and 255).toFloat() / 255.0f
+                    val g = (i shr 8 and 255).toFloat() / 255.0f
+                    val h = (i and 255).toFloat() / 255.0f
+                    (this as BlockRenderManagerAccessor).blockModelRenderer.render(
+                        matrices.peek(),
+                        vertexConsumers.getBuffer(RenderLayers.getEntityBlockLayer(state, false)),
+                        state,
+                        bakedModel,
+                        f,
+                        g,
+                        h,
+                        light,
+                        OverlayTexture.DEFAULT_UV
+                    )
+                }
+                BlockRenderType.ENTITYBLOCK_ANIMATED, BlockRenderType.INVISIBLE -> (this as BlockRenderManagerAccessor).builtinModelItemRenderer.render(
+                    ItemStack(state.block),
+                    ModelTransformation.Mode.NONE,
+                    matrices,
+                    vertexConsumers,
+                    light,
+                    OverlayTexture.DEFAULT_UV
+                )
+                else -> {}
+            }
+        }
     }
 }
