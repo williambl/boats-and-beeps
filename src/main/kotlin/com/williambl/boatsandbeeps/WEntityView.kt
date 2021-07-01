@@ -46,7 +46,7 @@ class WEntityView(var entity: Entity? = null): WWidget() {
         backgroundPainter?.paintBackground(matrices, x, y, this)
 
         entity?.let {
-            drawEntity(x+width/2, (y+height/1.23).toInt(), 28, 60.0f, 10.0f, it)
+            drawEntity(x+width/2, (y+height/1.27).toInt(), 25, 120.0f, 10.0f, it)
         }
     }
 
@@ -65,14 +65,8 @@ class WEntityView(var entity: Entity? = null): WWidget() {
         matrixStack2.translate(0.0, 0.0, 1000.0)
         matrixStack2.scale(size.toFloat(), -size.toFloat(), size.toFloat())
         matrixStack2.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(-g))
-        //val quaternion = Vec3f.POSITIVE_Z.getDegreesQuaternion(180.0f)
-        //val quaternion2 = Vec3f.POSITIVE_X.getDegreesQuaternion(g * 20.0f)
-        //quaternion.hamiltonProduct(quaternion2)
-        //matrixStack2.multiply(quaternion)
         DiffuseLighting.method_34742()
         val entityRenderDispatcher = MinecraftClient.getInstance().entityRenderDispatcher
-        //quaternion2.conjugate()
-        //entityRenderDispatcher.rotation = quaternion2
         entityRenderDispatcher.setRenderShadows(false)
         val immediate = MinecraftClient.getInstance().bufferBuilders.entityVertexConsumers
         RenderSystem.runAsFancy {
