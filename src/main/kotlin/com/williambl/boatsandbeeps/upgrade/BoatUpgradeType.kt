@@ -4,11 +4,15 @@ import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity
 import com.williambl.boatsandbeeps.tater
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.fabricmc.fabric.api.registry.FuelRegistry
 import net.minecraft.block.AbstractBannerBlock
 import net.minecraft.block.BlockState
 import net.minecraft.block.Blocks
 import net.minecraft.block.SkullBlock
+import net.minecraft.client.util.ParticleUtil
+import net.minecraft.entity.EntityType
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.item.Item
@@ -20,14 +24,19 @@ import net.minecraft.particle.ParticleTypes
 import net.minecraft.screen.GenericContainerScreenHandler
 import net.minecraft.screen.NamedScreenHandlerFactory
 import net.minecraft.screen.ScreenHandler
+import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.state.property.Properties
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
+import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.Direction
 import net.minecraft.util.math.Vec3d
+import net.minecraft.util.math.intprovider.UniformIntProvider
 import net.minecraft.util.registry.Registry
+import net.minecraft.world.Heightmap
 
 data class BoatUpgradeType(
     val slots: List<BoatUpgradeSlot>,
@@ -136,10 +145,57 @@ data class BoatUpgradeType(
             blockstate = { _, _ -> tater.defaultState }
         ))
 
+        val LIGHTNING_ROD = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:lightning_rod"), BoatUpgradeType(
+            slots = listOf(BoatUpgradeSlot.AFT, BoatUpgradeSlot.PORT, BoatUpgradeSlot.STARBOARD),
+            blockstate = { _, _ -> Blocks.LIGHTNING_ROD.defaultState },
+            tickMethod = { boat, pos, data ->
+                if (boat.world.isClient) {
+                    if (boat.world.isThundering && boat.world.random.nextInt(200) <= boat.world.time % 200L && pos.getY().toInt() == boat.world.getTopY(
+                            Heightmap.Type.WORLD_SURFACE,
+                            pos.getX().toInt(),
+                            pos.getZ().toInt()
+                        ) - 1
+                    ) {
+                        ParticleUtil.spawnParticle(
+                            Direction.UP.axis,
+                            boat.world,
+                            BlockPos(pos),
+                            0.125,
+                            ParticleTypes.ELECTRIC_SPARK,
+                            UniformIntProvider.create(1, 2)
+                        )
+                    }
+
+                } else {
+                    if (boat.world.isThundering) {
+                        if (boat.world.random.nextDouble() < 0.001) {
+                            boat.world.spawnEntity(EntityType.LIGHTNING_BOLT.create(boat.world)?.apply {
+                                setPosition(pos)
+                                setCosmetic(true)
+                            })
+                            if (boat.isLogicalSideForUpdatingMovement) {
+                                boat.velocity = boat.velocity.multiply(10.0)
+                            } else {
+                                val player = boat.primaryPassenger
+                                if (player is ServerPlayerEntity) {
+                                    ServerPlayNetworking.send(player, Identifier("boats-and-beeps:multiply_velocity"),
+                                        PacketByteBufs.create().also {
+                                            it.writeDouble(2.0).writeDouble(2.0).writeDouble(2.0)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ))
+
         val ITEM_TO_UPGRADE_TYPE: BiMap<Item, BoatUpgradeType> = HashBiMap.create(mutableMapOf(
             Items.CHEST to CHEST,
             Items.FURNACE to FURNACE,
-            Items.POTATO to TATER
+            Items.POTATO to TATER,
+            Items.LIGHTNING_ROD to LIGHTNING_ROD
         ).apply {
             putAll(BANNERS.mapKeys { it.key.asItem() })
             putAll(SKULLS)
