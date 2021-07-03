@@ -1,0 +1,5 @@
+{
+  "tooltip.boats-and-beeps.parts": "%1$d Parts",
+  "tooltip.boats-and-beeps.upgrades_for_part": "Upgrades for Part %1$d",
+  "tooltip.boats-and-beeps.upgrades_for_slot": "%1$s: %2$s"
+}

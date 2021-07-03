@@ -20,18 +20,18 @@ val UPGRADES_REGISTRY: SimpleRegistry<BoatUpgradeType> = FabricRegistryBuilder.c
 
 fun createUpgrade(stack: ItemStack): BoatUpgrade? {
     val type = BoatUpgradeType.ITEM_TO_UPGRADE_TYPE[stack.item] ?: return null
-    val data = type.getExtraDataFromItem.invoke(stack)
+    val data = type.getDataFromItem(stack)
     return BoatUpgrade(type, data)
 }
 
 data class BoatUpgrade(val type: BoatUpgradeType, val data: NbtCompound? = null) {
-    fun getBlockstate(boat: UpgradedBoatEntity): BlockState = type.blockstate(boat, data)
+    fun getBlockstate(boat: UpgradedBoatEntity): BlockState = type.getBlockState(boat, data)
 
     fun interact(boat: UpgradedBoatEntity, player: PlayerEntity, hand: Hand): ActionResult =
-        type.interactMethod(boat, player, hand, data)
+        type.interact(boat, player, hand, data)
 
     fun interactSpecifically(boat: UpgradedBoatEntity, player: PlayerEntity, hand: Hand, part: Int, slot: BoatUpgradeSlot): ActionResult =
-        type.interactSpecificallyMethod(boat, player, hand, part, slot, data)
+        type.interactSpecifically(boat, player, hand, part, slot, data)
 
-    fun tick(boat: UpgradedBoatEntity, position: Vec3d) = type.tickMethod(boat, position, data)
+    fun tick(boat: UpgradedBoatEntity, position: Vec3d) = type.tick(boat, position, data)
 }
