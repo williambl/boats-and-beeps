@@ -7,6 +7,7 @@ import com.williambl.boatsandbeeps.upgrade.BoatUpgradeSlot
 import com.williambl.boatsandbeeps.upgrade.BoatUpgradeType
 import com.williambl.boatsandbeeps.upgradedBoatItems
 import com.williambl.boatsandbeeps.writePartsAndUpgrades
+import net.minecraft.client.item.TooltipContext
 import net.minecraft.entity.Entity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.vehicle.BoatEntity
@@ -16,6 +17,8 @@ import net.minecraft.item.ItemGroup
 import net.minecraft.item.ItemStack
 import net.minecraft.predicate.entity.EntityPredicates
 import net.minecraft.stat.Stats
+import net.minecraft.text.Text
+import net.minecraft.text.TranslatableText
 import net.minecraft.util.Hand
 import net.minecraft.util.TypedActionResult
 import net.minecraft.util.collection.DefaultedList
@@ -24,6 +27,7 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.world.RaycastContext
 import net.minecraft.world.World
 import net.minecraft.world.event.GameEvent
+import java.util.*
 import java.util.function.Predicate
 
 class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(settings) {
@@ -67,6 +71,28 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 TypedActionResult.pass(itemStack)
             }
         }
+    }
+
+    override fun appendTooltip(
+        stack: ItemStack,
+        world: World?,
+        tooltip: MutableList<Text>,
+        context: TooltipContext
+    ) {
+        val (parts, upgrades) = readPartsAndUpgrades(stack.getOrCreateSubTag("BoatData"))
+        tooltip.add(TranslatableText("tooltip.boats-and-beeps.parts", parts))
+        tooltip.addAll(upgrades.flatMapIndexed { idx, it ->
+            if (it.isEmpty()) listOf() else listOf(
+                TranslatableText("tooltip.boats-and-beeps.upgrades_for_part", idx+1),
+                *(it.map { (slot, upgrade) ->
+                    TranslatableText(
+                        "tooltip.boats-and-beeps.upgrades_for_slot",
+                        TranslatableText("slot.boats-and-beeps.${slot.name.lowercase(Locale.ROOT)}"),
+                        upgrade.type.getName()
+                    )
+                }.toTypedArray())
+            )
+        })
     }
 
     override fun getDefaultStack(): ItemStack {
