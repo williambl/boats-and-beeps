@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "boats-and-beeps:block/boat_upgrade_table"
+    }
+  }
+}
