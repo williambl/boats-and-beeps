@@ -1,13 +1,10 @@
 package com.williambl.boatsandbeeps.boat
 
-import com.williambl.boatsandbeeps.ExtraDataEntitySpawnS2CPacket
-import com.williambl.boatsandbeeps.getAsNbt
+import com.williambl.boatsandbeeps.*
 import com.williambl.boatsandbeeps.mixin.BoatEntityAccessor
-import com.williambl.boatsandbeeps.readPartsAndUpgrades
 import com.williambl.boatsandbeeps.upgrade.BoatUpgrade
 import com.williambl.boatsandbeeps.upgrade.BoatUpgradeSlot
 import com.williambl.boatsandbeeps.upgrade.BoatUpgradeType
-import com.williambl.boatsandbeeps.upgradedBoatEntityType
 import com.williambl.multipartentities.MultipartEntity
 import net.minecraft.block.BlockState
 import net.minecraft.block.ShapeContext
@@ -15,6 +12,7 @@ import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityDimensions
 import net.minecraft.entity.EntityPose
 import net.minecraft.entity.LivingEntity
+import net.minecraft.entity.damage.DamageSource
 import net.minecraft.entity.data.DataTracker
 import net.minecraft.entity.data.TrackedDataHandlerRegistry
 import net.minecraft.entity.mob.WaterCreatureEntity
@@ -22,6 +20,7 @@ import net.minecraft.entity.passive.AnimalEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.inventory.SimpleInventory
+import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.network.Packet
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
@@ -35,7 +34,9 @@ import net.minecraft.util.function.BooleanBiFunction
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Vec3d
 import net.minecraft.util.shape.VoxelShapes
+import net.minecraft.world.GameRules
 import net.minecraft.world.World
+import net.minecraft.world.event.GameEvent
 import kotlin.math.max
 import kotlin.properties.Delegates
 
@@ -223,6 +224,36 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
         }
         return super.interact(player, hand)
     }
+
+    override fun damage(source: DamageSource, amount: Float): Boolean {
+        return if (isInvulnerableTo(source)) {
+            false
+        } else if (!world.isClient && !this.isRemoved) {
+            this.damageWobbleSide = -this.damageWobbleSide
+            this.damageWobbleTicks = 10
+            this.damageWobbleStrength = this.damageWobbleStrength + amount * 10.0f
+            scheduleVelocityUpdate()
+            this.emitGameEvent(GameEvent.ENTITY_DAMAGED, source.attacker)
+            val bl = source.attacker is PlayerEntity && (source.attacker as PlayerEntity?)!!.abilities.creativeMode
+            if (bl || this.damageWobbleStrength > 40.0f) {
+                if (!bl && world.gameRules.getBoolean(GameRules.DO_ENTITY_DROPS)) {
+                    dropStack(getItemStack())
+                }
+                discard()
+            }
+            true
+        } else {
+            true
+        }
+    }
+
+    private fun getItemStack(): ItemStack {
+        return upgradedBoatItems[boatType]?.defaultStack?.also { stack ->
+            stack.putSubTag("BoatData", writePartsAndUpgrades(parts, upgrades))
+        } ?: ItemStack.EMPTY
+    }
+
+    override fun getPickBlockStack(): ItemStack = getItemStack()
 
     override fun createSpawnPacket(): Packet<*> {
         return ExtraDataEntitySpawnS2CPacket(this, getAsNbt())
