@@ -19,6 +19,7 @@ import net.minecraft.predicate.entity.EntityPredicates
 import net.minecraft.stat.Stats
 import net.minecraft.text.Text
 import net.minecraft.text.TranslatableText
+import net.minecraft.util.Formatting
 import net.minecraft.util.Hand
 import net.minecraft.util.TypedActionResult
 import net.minecraft.util.collection.DefaultedList
@@ -83,12 +84,12 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
         tooltip.add(TranslatableText("tooltip.boats-and-beeps.parts", parts))
         tooltip.addAll(upgrades.flatMapIndexed { idx, it ->
             if (it.isEmpty()) listOf() else listOf(
-                TranslatableText("tooltip.boats-and-beeps.upgrades_for_part", idx+1),
+                TranslatableText("tooltip.boats-and-beeps.upgrades_for_part", idx+1).formatted(Formatting.UNDERLINE),
                 *(it.map { (slot, upgrade) ->
                     TranslatableText(
                         "tooltip.boats-and-beeps.upgrades_for_slot",
-                        TranslatableText("slot.boats-and-beeps.${slot.name.lowercase(Locale.ROOT)}"),
-                        upgrade.type.getName()
+                        TranslatableText("slot.boats-and-beeps.${slot.name.lowercase(Locale.ROOT)}").formatted(Formatting.BOLD),
+                        upgrade.type.getName().shallowCopy().formatted(Formatting.RED)
                     )
                 }.toTypedArray())
             )
