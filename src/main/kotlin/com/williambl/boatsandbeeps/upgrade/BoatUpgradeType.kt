@@ -233,9 +233,10 @@ interface BoatUpgradeType {
                     if (boat.getLocation() == BoatEntity.Location.IN_AIR) {
                         boat.velocityDecayModifier = 1.06f
                     }
+                    val yDiff = (boat.velocity.horizontalLength() * (boat.primaryPassenger?.rotationVector?.y ?: 0.0) * 0.2)
                     boat.addVelocity(
                         0.0,
-                        (boat.velocity.horizontalLength() * (boat.primaryPassenger?.rotationVector?.y ?: 0.0) * 0.2),
+                        if (boat.getLocation() == BoatEntity.Location.IN_WATER) yDiff.coerceAtLeast(0.0) else yDiff,
                         0.0
                     )
                 }
