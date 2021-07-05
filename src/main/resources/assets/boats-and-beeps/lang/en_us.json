@@ -1,8 +1,9 @@
 {
   "block.boats-and-beeps.tater": "Tater",
   "block.boats-and-beeps.pineapple": "Pineapple",
+  "block.boats-and-beeps.boat_upgrade_table": "Boat Upgrading Table",
   "item.boats-and-beeps.oak_boat": "Oak Boat",
-  "item.boats-and-beeps.birch_boat": "Oak Boat",
+  "item.boats-and-beeps.birch_boat": "Birch Boat",
   "item.boats-and-beeps.spruce_boat": "Spruce Boat",
   "item.boats-and-beeps.jungle_boat": "Jungle Boat",
   "item.boats-and-beeps.acacia_boat": "Acacia Boat",
