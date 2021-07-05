@@ -51,6 +51,7 @@ val boatUpgradeTable = Registry.register(Registry.BLOCK, Identifier("boats-and-b
 val boatUpgradeTableItem = Registry.register(Registry.ITEM, Identifier("boats-and-beeps:boat_upgrade_table"), BlockItem(boatUpgradeTable, Item.Settings().group(ItemGroup.DECORATIONS)))
 
 val tater = Registry.register(Registry.BLOCK, Identifier("boats-and-beeps:tater"), BoatUpgradeTableBlock(AbstractBlock.Settings.of(Material.ORGANIC_PRODUCT)))
+val pineapple = Registry.register(Registry.BLOCK, Identifier("boats-and-beeps:pineapple"), BoatUpgradeTableBlock(AbstractBlock.Settings.of(Material.PLANT)))
 
 fun init() {
     ServerPlayNetworking.registerGlobalReceiver(Identifier("boats-and-beeps:sync_part")) { server, player, handler, buf, sender ->

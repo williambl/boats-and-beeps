@@ -3,6 +3,7 @@ package com.williambl.boatsandbeeps.upgrade
 import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity
+import com.williambl.boatsandbeeps.pineapple
 import com.williambl.boatsandbeeps.tater
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
@@ -138,6 +139,7 @@ interface BoatUpgradeType {
 
             override fun getName(): Text = Blocks.FURNACE.name
         })
+
         val BANNERS = Registry.BLOCK.asSequence()
             .filterIsInstance(BannerBlock::class.java)
             .map { it to Registry.BLOCK.getId(it) }
@@ -161,6 +163,12 @@ interface BoatUpgradeType {
             override val slots = listOf(BoatUpgradeSlot.BOW)
             override fun getBlockState(boat: UpgradedBoatEntity, data: NbtCompound?): BlockState = tater.defaultState
             override fun getName(): Text = tater.name
+        })
+
+        val PINEAPPLE = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:pineapple"), object : BoatUpgradeType {
+            override val slots = listOf(BoatUpgradeSlot.BOW)
+            override fun getBlockState(boat: UpgradedBoatEntity, data: NbtCompound?): BlockState = pineapple.defaultState
+            override fun getName(): Text = pineapple.name
         })
 
         val LIGHTNING_ROD = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:lightning_rod"), object : BoatUpgradeType {

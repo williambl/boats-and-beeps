@@ -1,0 +1,15 @@
+{
+  "parent": "boats-and-beeps:block/cube_column_with_north_overlay",
+  "display": {
+    "firstperson_righthand": {
+      "rotation": [ 0, 135, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.40, 0.40, 0.40 ]
+    }
+  },
+  "textures": {
+    "end": "block/pumpkin_top",
+    "side": "block/pumpkin_side",
+    "overlay": "boats-and-beeps:block/pineapple_face"
+  }
+}
