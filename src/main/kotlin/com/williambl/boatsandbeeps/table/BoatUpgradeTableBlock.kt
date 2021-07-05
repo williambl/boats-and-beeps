@@ -14,7 +14,7 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
 
 class BoatUpgradeTableBlock(settings: Settings) : Block(settings) {
-    private val TITLE: Text = TranslatableText("boats-and-beeps.container.boat_upgrading")
+    private val TITLE: Text = TranslatableText("container.boats-and-beeps.boat_upgrading")
 
     override fun onUse(
         state: BlockState,

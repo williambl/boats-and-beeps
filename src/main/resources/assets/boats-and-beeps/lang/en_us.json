@@ -1,5 +1,23 @@
 {
+  "block.boats-and-beeps.tater": "Tater",
+  "block.boats-and-beeps.pineapple": "Pineapple",
+  "item.boats-and-beeps.oak_boat": "Oak Boat",
+  "item.boats-and-beeps.birch_boat": "Oak Boat",
+  "item.boats-and-beeps.spruce_boat": "Spruce Boat",
+  "item.boats-and-beeps.jungle_boat": "Jungle Boat",
+  "item.boats-and-beeps.acacia_boat": "Acacia Boat",
+  "item.boats-and-beeps.dark_oak_boat": "Dark Oak Boat",
+  "container.boats-and-beeps.boat_upgrading": "Boat Upgrading",
+  "container.boats-and-beeps.boat_upgrading.add_part": "Add Part:",
+  "container.boats-and-beeps.boat_upgrading.part": "Part: %1$d / %2$d",
   "tooltip.boats-and-beeps.parts": "%1$d Parts",
   "tooltip.boats-and-beeps.upgrades_for_part": "Upgrades for Part %1$d",
-  "tooltip.boats-and-beeps.upgrades_for_slot": "%1$s: %2$s"
+  "tooltip.boats-and-beeps.upgrades_for_slot": "%1$s: %2$s",
+  "slot.boats-and-beeps.bow": "Bow",
+  "slot.boats-and-beeps.front": "Front",
+  "slot.boats-and-beeps.port": "Port",
+  "slot.boats-and-beeps.starboard": "Starboard",
+  "slot.boats-and-beeps.back": "Back",
+  "slot.boats-and-beeps.aft": "Aft",
+  "upgrade.boats-and-beeps.seat": "Seat"
 }

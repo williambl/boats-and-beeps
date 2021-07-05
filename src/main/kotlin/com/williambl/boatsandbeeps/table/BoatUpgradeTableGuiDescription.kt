@@ -16,19 +16,21 @@ import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
 import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.inventory.Inventory
+import net.minecraft.inventory.SimpleInventory
 import net.minecraft.item.BoatItem
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
 import net.minecraft.screen.*
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.LiteralText
+import net.minecraft.text.TranslatableText
 import net.minecraft.util.Identifier
 import kotlin.math.max
 import kotlin.properties.Delegates
 
 
 class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInventory, val context: ScreenHandlerContext) :
-    SyncedGuiDescription(boatUpgradeTableScreenHandlerType, syncId, playerInventory, getBlockInventory(context, 8), null) {
+    SyncedGuiDescription(boatUpgradeTableScreenHandlerType, syncId, playerInventory, OneItemPerStackInventory(), null) {
 
     val root: WPlainPanel = WPlainPanel()
     val boatSlot: WItemSlot
@@ -71,13 +73,13 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
 
         partsPanel = WPlainPanel()
         partsPanel.setSize(72, 45)
-        currentPartLabel = WLabel("Part: 1")
+        currentPartLabel = WLabel(TranslatableText("container.boats-and-beeps.boat_upgrading.part", 1))
         partsPanel.add(currentPartLabel, 0, 0)
         prevPartButton = WButton(LiteralText("<")).also { it.onClick = Runnable { onPrevPartPressed() } }
         partsPanel.add(prevPartButton, 0, 9)
         nextPartButton = WButton(LiteralText(">")).also { it.onClick = Runnable { onNextPartPressed() } }
         partsPanel.add(nextPartButton, 18, 9)
-        partsPanel.add(WLabel("Add Part:").setVerticalAlignment(VerticalAlignment.CENTER), 0, 30)
+        partsPanel.add(WLabel(TranslatableText("container.boats-and-beeps.boat_upgrading.add_part")).setVerticalAlignment(VerticalAlignment.CENTER), 0, 30)
         addPartSlot = WItemSlot.of(blockInventory, 7).also { it.isModifiable = false }.also { it.addChangeListener(this::onPartAdded) }
         partsPanel.add(addPartSlot, 54, 30)
 
@@ -181,7 +183,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     fun onChangePart(newPart: Int) {
         prevPartButton.isEnabled = newPart > 1
         nextPartButton.isEnabled = newPart < partsAndUpgrades?.first ?: 0
-        currentPartLabel.text = LiteralText("Part: $newPart/${partsAndUpgrades?.first ?: 0}")
+        currentPartLabel.text = TranslatableText("container.boats-and-beeps.boat_upgrading.part", newPart, (partsAndUpgrades?.first ?: 0))
         val upgradeSlotValues = BoatUpgradeSlot.values()
         val upgrades = partsAndUpgrades?.second?.getOrNull(newPart-1)
         for (upgradeslot in upgradeSlots.keys) {
@@ -293,4 +295,8 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     companion object {
         val boatSprite = Identifier("boats-and-beeps:textures/gui/boat_background.png")
     }
+}
+
+class OneItemPerStackInventory : SimpleInventory(8) {
+    override fun getMaxCountPerStack(): Int = 1
 }
