@@ -223,6 +223,7 @@ interface BoatUpgradeType {
             Items.CHEST to CHEST,
             Items.FURNACE to FURNACE,
             Items.POTATO to TATER,
+            Items.PUMPKIN to PINEAPPLE,
             Items.LIGHTNING_ROD to LIGHTNING_ROD
         ).apply {
             putAll(BANNERS.mapKeys { it.key.asItem() })
