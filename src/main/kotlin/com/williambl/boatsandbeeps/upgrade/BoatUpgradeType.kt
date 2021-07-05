@@ -242,13 +242,31 @@ interface BoatUpgradeType {
             }
         })
 
+        val BLUE_ICE = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:blue_ice"), object : BoatUpgradeType {
+            override val slots = listOf(BoatUpgradeSlot.AFT)
+            override fun getBlockState(boat: UpgradedBoatEntity, data: NbtCompound?): BlockState = Blocks.BLUE_ICE.defaultState
+            override fun getName(): Text = Blocks.BLUE_ICE.name
+            override fun tick(boat: UpgradedBoatEntity, upgradePos: Vec3d, data: NbtCompound?) {
+                if (boat.world.isClient && boat.getLocation() == BoatEntity.Location.ON_LAND) {
+                    for (i in 0..3)
+                        boat.world.addParticle(ParticleTypes.SNOWFLAKE, upgradePos.x+boat.world.random.nextGaussian()*0.75, upgradePos.y+boat.world.random.nextDouble()*0.02, upgradePos.z+boat.world.random.nextGaussian()*0.75, 0.0, 0.0, 0.0)
+                }
+                if (boat.isLogicalSideForUpdatingMovement) {
+                    if (boat.getLocation() == BoatEntity.Location.ON_LAND) {
+                        boat.velocityDecayModifier = Blocks.BLUE_ICE.slipperiness/boat.method_7548()
+                    }
+                }
+            }
+        })
+
         val ITEM_TO_UPGRADE_TYPE: BiMap<Item, BoatUpgradeType> = HashBiMap.create(mutableMapOf(
             Items.CHEST to CHEST,
             Items.FURNACE to FURNACE,
             Items.POTATO to TATER,
             Items.PUMPKIN to PINEAPPLE,
             Items.LIGHTNING_ROD to LIGHTNING_ROD,
-            Items.END_ROD to END_ROD
+            Items.END_ROD to END_ROD,
+            Items.BLUE_ICE to BLUE_ICE
         ).apply {
             putAll(BANNERS.mapKeys { it.key.asItem() })
             putAll(SKULLS)
