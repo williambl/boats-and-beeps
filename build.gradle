@@ -34,7 +34,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
-    modImplementation "com.williambl.multipartentities:multipart-entities:${project.multipart_entities_version}"
+    modImplementation include("com.williambl.multipartentities:multipart-entities:${project.multipart_entities_version}")
 
     modImplementation include("io.github.cottonmc:LibGui:${libgui_version}")
 
