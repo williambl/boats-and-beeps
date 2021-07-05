@@ -16,6 +16,7 @@ import net.minecraft.client.util.ParticleUtil
 import net.minecraft.entity.EntityType
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.PlayerInventory
+import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
@@ -219,12 +220,35 @@ interface BoatUpgradeType {
             override fun getName(): Text = Blocks.LIGHTNING_ROD.name
         })
 
+        val END_ROD = Registry.register(UPGRADES_REGISTRY, Identifier("boats-and-beeps:end_rod"), object : BoatUpgradeType {
+            override val slots = listOf(BoatUpgradeSlot.STARBOARD, BoatUpgradeSlot.PORT, BoatUpgradeSlot.BACK)
+            override fun getBlockState(boat: UpgradedBoatEntity, data: NbtCompound?): BlockState = Blocks.END_ROD.defaultState
+            override fun getName(): Text = Blocks.END_ROD.name
+            override fun tick(boat: UpgradedBoatEntity, upgradePos: Vec3d, data: NbtCompound?) {
+                if (boat.world.isClient && boat.getLocation() == BoatEntity.Location.IN_AIR) {
+                    for (i in 0..3)
+                        boat.world.addParticle(ParticleTypes.END_ROD, upgradePos.x, upgradePos.y+boat.world.random.nextGaussian()*0.75, upgradePos.z, 0.0, boat.world.random.nextDouble()*-0.2, 0.0)
+                }
+                if (boat.isLogicalSideForUpdatingMovement) {
+                    if (boat.getLocation() == BoatEntity.Location.IN_AIR) {
+                        boat.velocityDecayModifier = 1.06f
+                    }
+                    boat.addVelocity(
+                        0.0,
+                        (boat.velocity.horizontalLength() * (boat.primaryPassenger?.rotationVector?.y ?: 0.0) * 0.2),
+                        0.0
+                    )
+                }
+            }
+        })
+
         val ITEM_TO_UPGRADE_TYPE: BiMap<Item, BoatUpgradeType> = HashBiMap.create(mutableMapOf(
             Items.CHEST to CHEST,
             Items.FURNACE to FURNACE,
             Items.POTATO to TATER,
             Items.PUMPKIN to PINEAPPLE,
-            Items.LIGHTNING_ROD to LIGHTNING_ROD
+            Items.LIGHTNING_ROD to LIGHTNING_ROD,
+            Items.END_ROD to END_ROD
         ).apply {
             putAll(BANNERS.mapKeys { it.key.asItem() })
             putAll(SKULLS)

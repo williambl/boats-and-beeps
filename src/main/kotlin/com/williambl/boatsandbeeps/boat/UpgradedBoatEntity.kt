@@ -57,6 +57,8 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
 
     var fuel: Int = 0
 
+    var velocityDecayModifier: Float = 1.0f
+
     var isLit
         get() = dataTracker.get(isLitKey)
         set(value) = dataTracker.set(isLitKey, value)
@@ -99,6 +101,7 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
     }
 
     override fun tick() {
+        velocityDecayModifier = 1.0f
         partEntities.forEachIndexed { i, part ->
             part.partTick(i)
         }
@@ -202,10 +205,6 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
 
     override fun pushAwayFrom(entity: Entity?) {}
 
-    @Suppress("CAST_NEVER_SUCCEEDS")
-    @JvmName("accessorHelper\$yawVelocity")
-    fun getYawVelocity(): Float = (this as BoatEntityAccessor).yawVelocity
-
     override fun getParts(): Array<BoatPartEntity> {
         return partEntities
     }
@@ -279,6 +278,16 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
             return result
         }
         return ActionResult.PASS
+    }
+    @Suppress("CAST_NEVER_SUCCEEDS")
+    @JvmName("accessorHelper\$yawVelocity")
+    fun getYawVelocity(): Float = (this as BoatEntityAccessor).yawVelocity
+
+
+    @JvmName("accessorHelper\$getLocation")
+    fun getLocation(): Location? {
+        @Suppress("CAST_NEVER_SUCCEEDS")
+        return ((this as BoatEntityAccessor).location)
     }
 
     companion object {

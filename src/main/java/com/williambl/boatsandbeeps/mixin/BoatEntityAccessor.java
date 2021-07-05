@@ -8,4 +8,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface BoatEntityAccessor {
     @Accessor
     float getYawVelocity();
+
+    @Accessor
+    BoatEntity.Location getLocation();
 }
