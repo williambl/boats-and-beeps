@@ -17,8 +17,11 @@ import net.minecraft.entity.SpawnGroup
 import net.minecraft.entity.vehicle.BoatEntity
 import net.minecraft.item.*
 import net.minecraft.nbt.NbtCompound
+import net.minecraft.nbt.NbtHelper
 import net.minecraft.nbt.NbtList
+import net.minecraft.nbt.NbtString
 import net.minecraft.screen.ScreenHandlerContext
+import net.minecraft.text.Text
 import net.minecraft.util.Hand
 import net.minecraft.util.Identifier
 import net.minecraft.util.math.Vec3d
@@ -116,3 +119,8 @@ fun readPartsAndUpgrades(nbt: NbtCompound): Pair<Int, List<Map<BoatUpgradeSlot, 
     }
 )
 
+fun ItemStack.setLore(lore: List<Text>) {
+    getOrCreateSubTag(ItemStack.DISPLAY_KEY).put(ItemStack.LORE_KEY, NbtList().apply {
+        lore.asSequence().map(Text.Serializer::toJson).map(NbtString::of).forEach(::add)
+    })
+}
