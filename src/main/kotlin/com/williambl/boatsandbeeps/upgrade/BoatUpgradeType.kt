@@ -195,9 +195,9 @@ interface BoatUpgradeType {
 
                 } else {
                     if (boat.world.isThundering) {
-                        if (boat.world.random.nextDouble() < 0.001) {
+                        if (boat.world.random.nextDouble() < 0.003) {
                             boat.world.spawnEntity(EntityType.LIGHTNING_BOLT.create(boat.world)?.apply {
-                                setPosition(pos)
+                                refreshPositionAfterTeleport(upgradePos)
                                 setCosmetic(true)
                             })
                             if (boat.isLogicalSideForUpdatingMovement) {
