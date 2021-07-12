@@ -160,7 +160,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
             inventory.setStack(index, UpgradedBoatItem.boatToUpgradedBoat(stack))
         }
         hasBoat = true
-        partsAndUpgrades = readPartsAndUpgrades(inventory.getStack(index).getOrCreateSubTag("BoatData"))
+        partsAndUpgrades = readPartsAndUpgrades(inventory.getStack(index).getOrCreateSubNbt("BoatData"))
         currentPart = max(currentPart, 1)
         addPartSlot.isModifiable = true
     }
@@ -190,7 +190,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
             blockInventory.setStack(
                 upgradeSlotValues.indexOf(upgradeslot) + 1,
                 upgrades?.let {
-                    BoatUpgradeType.ITEM_TO_UPGRADE_TYPE.inverse()[it[upgradeslot]?.type]?.defaultStack?.also { s -> s.tag = it[upgradeslot]?.data }
+                    BoatUpgradeType.ITEM_TO_UPGRADE_TYPE.inverse()[it[upgradeslot]?.type]?.defaultStack?.also { s -> s.nbt = it[upgradeslot]?.data }
                 } ?: Items.AIR.defaultStack
             )
         }
@@ -208,7 +208,7 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
                 )
             }
             is UpgradedBoatItem -> {
-                val otherState = readPartsAndUpgrades(stack.getOrCreateSubTag("BoatData"))
+                val otherState = readPartsAndUpgrades(stack.getOrCreateSubNbt("BoatData"))
                 modifyBoatState(
                     parts = (partsAndUpgrades?.first ?: 0) + otherState.first,
                     upgrades = (partsAndUpgrades?.second?.toMutableList() ?: mutableListOf()).also { it.addAll(otherState.second) }
@@ -218,10 +218,10 @@ class BoatUpgradeTableGuiDescription(syncId: Int, playerInventory: PlayerInvento
     }
 
     fun modifyBoatState(parts: Int = partsAndUpgrades?.first ?: 0, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>> = partsAndUpgrades?.second ?: listOf()) {
-        val tag = blockInventory.getStack(0).orCreateTag.copy()
+        val tag = blockInventory.getStack(0).orCreateNbt.copy()
         tag.remove("BoatData")
         tag.put("BoatData", writePartsAndUpgrades(parts, upgrades))
-        blockInventory.getStack(0).tag = tag
+        blockInventory.getStack(0).nbt = tag
         partsAndUpgrades = readPartsAndUpgrades(tag.getCompound("BoatData"))
     }
 

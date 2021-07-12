@@ -54,7 +54,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 }
             }
             if (hitResult.type == HitResult.Type.BLOCK) {
-                val partsAndUpgrades = readPartsAndUpgrades(itemStack.getOrCreateSubTag("BoatData"))
+                val partsAndUpgrades = readPartsAndUpgrades(itemStack.getOrCreateSubNbt("BoatData"))
                 val entity = UpgradedBoatEntity(world, hitResult.pos, partsAndUpgrades.first, partsAndUpgrades.second)
                 entity.boatType = this.type
                 entity.yaw = user.yaw
@@ -83,7 +83,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
         tooltip: MutableList<Text>,
         context: TooltipContext
     ) {
-        val (parts, upgrades) = readPartsAndUpgrades(stack.getOrCreateSubTag("BoatData"))
+        val (parts, upgrades) = readPartsAndUpgrades(stack.getOrCreateSubNbt("BoatData"))
         tooltip.add(TranslatableText("tooltip.boats-and-beeps.parts", parts))
         tooltip.addAll(upgrades.flatMapIndexed { idx, it ->
             if (it.isEmpty()) listOf() else listOf(
@@ -101,7 +101,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
 
     override fun getDefaultStack(): ItemStack {
         return super.getDefaultStack().also {
-            it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
+            it.orCreateNbt.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
                 BoatUpgradeSlot.FRONT to BoatUpgrade(
                     BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgrade(BoatUpgradeType.SEAT)
             ) }))
@@ -119,14 +119,14 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
 
         val ALL_DEFAULT_STACKS: List<ItemStack> by lazy { listOf(
             upgradedBoatItems[BoatEntity.Type.OAK]?.defaultStack?.also {
-                it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
+                it.orCreateNbt.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
                     BoatUpgradeSlot.FRONT to BoatUpgradeType.SEAT.create(), BoatUpgradeSlot.BACK to BoatUpgradeType.CHEST.create()
                 ) }))
                 it.setCustomName(TranslatableText("item.boats-and-beeps.chest_boat"))
                 it.setLore(listOf(TranslatableText("item.boats-and-beeps.chest_boat.lore")))
             },
             upgradedBoatItems[BoatEntity.Type.SPRUCE]?.defaultStack?.also {
-                it.orCreateTag.put("BoatData", writePartsAndUpgrades(2, listOf(mapOf(
+                it.orCreateNbt.put("BoatData", writePartsAndUpgrades(2, listOf(mapOf(
                     BoatUpgradeSlot.FRONT to BoatUpgradeType.FURNACE.create(), BoatUpgradeSlot.BACK to BoatUpgradeType.FURNACE.create()
                 ),
                     mapOf(
@@ -136,13 +136,13 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 it.setLore(listOf(TranslatableText("item.boats-and-beeps.furnace_boat.lore")))
             },
             upgradedBoatItems[BoatEntity.Type.DARK_OAK]?.defaultStack?.also {
-                it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, listOf(mapOf(
+                it.orCreateNbt.put("BoatData", writePartsAndUpgrades(1, listOf(mapOf(
                     BoatUpgradeSlot.BOW to (BoatUpgradeType.SKULLS[Items.SKELETON_SKULL as WallStandingBlockItem] ?: throw IllegalStateException("Skulls don't exist???") ).create(),
                     BoatUpgradeSlot.FRONT to BoatUpgradeType.SEAT.create(),
                     BoatUpgradeSlot.BACK to (BoatUpgradeType.BANNERS[Blocks.BLACK_BANNER] ?: throw IllegalStateException("Banners don't exist???")).let { type ->
                         BoatUpgrade(type,
                             type.getDataFromItem(Items.BLACK_BANNER.defaultStack.apply {
-                                getOrCreateSubTag("BlockEntityTag").put(
+                                getOrCreateSubNbt("BlockEntityTag").put(
                                     "Patterns",
                                     BannerPattern.Patterns().add(BannerPattern.SKULL, DyeColor.WHITE).toNbt()
                                 )
@@ -154,14 +154,14 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 it.setLore(listOf(TranslatableText("item.boats-and-beeps.pirate_ship.lore")))
             },
             upgradedBoatItems[BoatEntity.Type.BIRCH]?.defaultStack?.also {
-                it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
+                it.orCreateNbt.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
                     BoatUpgradeSlot.FRONT to BoatUpgradeType.SEAT.create(),
                     BoatUpgradeSlot.PORT to BoatUpgradeType.LIGHTNING_ROD.create(),
                     BoatUpgradeSlot.STARBOARD to BoatUpgradeType.LIGHTNING_ROD.create(),
                     BoatUpgradeSlot.BACK to (BoatUpgradeType.BANNERS[Blocks.RED_BANNER] ?: throw IllegalStateException("Banners don't exist???")).let { type ->
                         BoatUpgrade(type,
                             type.getDataFromItem(Items.RED_BANNER.defaultStack.apply {
-                                getOrCreateSubTag("BlockEntityTag").put(
+                                getOrCreateSubNbt("BlockEntityTag").put(
                                     "Patterns",
                                     BannerPattern.Patterns().add(BannerPattern.STRIPE_CENTER, DyeColor.WHITE).add(BannerPattern.TRIANGLE_BOTTOM, DyeColor.WHITE).toNbt()
                                 )
@@ -174,11 +174,11 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 it.setLore(listOf(TranslatableText("item.boats-and-beeps.speedy_boat.lore")))
             },
             upgradedBoatItems[BoatEntity.Type.JUNGLE]?.defaultStack?.also {
-                it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
+                it.orCreateNbt.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
                     BoatUpgradeSlot.FRONT to BoatUpgradeType.SEAT.create(), BoatUpgradeSlot.BACK to (BoatUpgradeType.BANNERS[Blocks.RED_BANNER] ?: throw IllegalStateException("Banners don't exist???")).let { type ->
                         BoatUpgrade(type,
                             type.getDataFromItem(Items.RED_BANNER.defaultStack.apply {
-                                getOrCreateSubTag("BlockEntityTag").put(
+                                getOrCreateSubNbt("BlockEntityTag").put(
                                     "Patterns",
                                     BannerPattern.Patterns().add(BannerPattern.STRIPE_CENTER, DyeColor.WHITE).add(BannerPattern.TRIANGLE_BOTTOM, DyeColor.WHITE).toNbt()
                                 )
@@ -191,7 +191,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
                 it.setLore(listOf(TranslatableText("item.boats-and-beeps.speedy_land_boat.lore")))
             },
             upgradedBoatItems[BoatEntity.Type.ACACIA]?.defaultStack?.also {
-                it.orCreateTag.put("BoatData", writePartsAndUpgrades(2, listOf(mapOf(
+                it.orCreateNbt.put("BoatData", writePartsAndUpgrades(2, listOf(mapOf(
                     BoatUpgradeSlot.BOW to (BoatUpgradeType.SKULLS[Items.DRAGON_HEAD] ?: throw IllegalStateException("Heads don't exist???")).create(),
                     BoatUpgradeSlot.FRONT to BoatUpgradeType.SEAT.create(),
                     BoatUpgradeSlot.BACK to BoatUpgradeType.SEAT.create()
@@ -210,10 +210,10 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
         fun boatToUpgradedBoat(stack: ItemStack): ItemStack {
             if (stack.item is BoatItem) {
                 val type = (stack.item as BoatItemAccessor).type
-                val nbt = stack.tag
+                val nbt = stack.nbt
                 return ItemStack(upgradedBoatItems[type], stack.count)
-                    .also { it.tag = nbt }
-                    .also { it.orCreateTag.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
+                    .also { it.nbt = nbt }
+                    .also { it.orCreateNbt.put("BoatData", writePartsAndUpgrades(1, List(1) { mapOf(
                         BoatUpgradeSlot.FRONT to BoatUpgrade(
                             BoatUpgradeType.SEAT), BoatUpgradeSlot.BACK to BoatUpgrade(BoatUpgradeType.SEAT)) })) }
             }

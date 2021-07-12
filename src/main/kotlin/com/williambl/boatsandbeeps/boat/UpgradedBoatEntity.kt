@@ -248,7 +248,7 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
 
     private fun getItemStack(): ItemStack {
         return upgradedBoatItems[boatType]?.defaultStack?.also { stack ->
-            stack.putSubTag("BoatData", writePartsAndUpgrades(parts, upgrades))
+            stack.setSubNbt("BoatData", writePartsAndUpgrades(parts, upgrades))
         } ?: ItemStack.EMPTY
     }
 

@@ -32,6 +32,8 @@
     "fabricloader": ">=0.8.7",
     "fabric": "*",
     "fabric-language-kotlin": "*",
+    "libgui": ">=4.0.0",
+    "multipart-entities": ">=1.0.0",
     "minecraft": "1.17.x"
   },
   "suggests": {

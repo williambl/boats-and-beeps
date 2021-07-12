@@ -47,7 +47,7 @@ interface BoatUpgradeType {
     fun interact(boat: UpgradedBoatEntity, player: PlayerEntity, hand: Hand, data: NbtCompound?): ActionResult = ActionResult.PASS
     fun interactSpecifically(boat: UpgradedBoatEntity, player: PlayerEntity, hand: Hand, part: Int, slot: BoatUpgradeSlot, data: NbtCompound?): ActionResult = ActionResult.PASS
     fun tick(boat: UpgradedBoatEntity, upgradePos: Vec3d, data: NbtCompound?) {}
-    fun getDataFromItem(stack: ItemStack): NbtCompound? = stack.tag
+    fun getDataFromItem(stack: ItemStack): NbtCompound? = stack.nbt
 
     fun getName(): Text = TranslatableText(Util.createTranslationKey("upgrade", getId()))
     fun getId(): Identifier = UPGRADES_REGISTRY.getId(this) ?: throw NullPointerException()
@@ -299,6 +299,6 @@ class BannerUpgradeType(private val banner: BannerBlock) : BoatUpgradeType {
 class SkullUpgradeType(private val skull: WallStandingBlockItem) : BoatUpgradeType {
     override val slots = listOf(BoatUpgradeSlot.BOW)
     override fun getBlockState(boat: UpgradedBoatEntity, data: NbtCompound?): BlockState = skull.block.defaultState
-    override fun getDataFromItem(stack: ItemStack): NbtCompound? = stack.tag?.apply { put("BlockEntityTag", this.copy()) }
+    override fun getDataFromItem(stack: ItemStack): NbtCompound? = stack.nbt?.apply { put("BlockEntityTag", this.copy()) }
     override fun getName(): Text = skull.name
 }

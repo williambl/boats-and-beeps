@@ -26,7 +26,7 @@ class UpgradedBoatItemRenderer(val type: BoatEntity.Type): BuiltinItemRendererRe
             upgradedBoatEntity = MinecraftClient.getInstance().world?.let { UpgradedBoatEntity(it) }
         }
         upgradedBoatEntity?.let { boat ->
-            val partsAndUpgrades = readPartsAndUpgrades(stack.getOrCreateSubTag("BoatData"))
+            val partsAndUpgrades = readPartsAndUpgrades(stack.getOrCreateSubNbt("BoatData"))
             boat.parts = partsAndUpgrades.first
             boat.upgrades = partsAndUpgrades.second
             boat.boatType = type

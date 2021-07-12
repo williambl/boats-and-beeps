@@ -136,7 +136,7 @@ class UpgradedBoatRenderer(context: EntityRendererFactory.Context) : EntityRende
                 }
                 BlockRenderType.ENTITYBLOCK_ANIMATED, BlockRenderType.INVISIBLE -> {
                     (this as BlockRenderManagerAccessor).builtinModelItemRenderer.render(
-                        ItemStack(state.block).also { it.tag = data },
+                        ItemStack(state.block).also { it.nbt = data },
                         ModelTransformation.Mode.NONE,
                         matrices,
                         vertexConsumers,

@@ -120,7 +120,7 @@ fun readPartsAndUpgrades(nbt: NbtCompound): Pair<Int, List<Map<BoatUpgradeSlot, 
 )
 
 fun ItemStack.setLore(lore: List<Text>) {
-    getOrCreateSubTag(ItemStack.DISPLAY_KEY).put(ItemStack.LORE_KEY, NbtList().apply {
+    getOrCreateSubNbt(ItemStack.DISPLAY_KEY).put(ItemStack.LORE_KEY, NbtList().apply {
         lore.asSequence().map(Text.Serializer::toJson).map(NbtString::of).forEach(::add)
     })
 }
