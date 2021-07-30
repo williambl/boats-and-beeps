@@ -15,7 +15,7 @@ import net.minecraft.util.math.Vec3f
 class WEntityView(var entity: Entity? = null): WWidget() {
 
     @Environment(EnvType.CLIENT)
-    private var backgroundPainter: BackgroundPainter? = background
+    private var backgroundPainter: BackgroundPainter? = null
 
     /**
      * Sets the [BackgroundPainter] of this panel.
@@ -85,11 +85,5 @@ class WEntityView(var entity: Entity? = null): WWidget() {
         matrixStack.pop()
         RenderSystem.applyModelViewMatrix()
         DiffuseLighting.enableGuiDepthLighting()
-    }
-
-    companion object {
-        @JvmField
-        @Environment(EnvType.CLIENT)
-        val background = BackgroundPainter.createNinePatch(Identifier("boats-and-beeps:textures/gui/entity_view_background.png"))
     }
 }
