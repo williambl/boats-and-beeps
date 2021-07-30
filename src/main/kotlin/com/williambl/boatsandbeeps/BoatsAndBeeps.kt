@@ -6,6 +6,7 @@ import com.williambl.boatsandbeeps.table.BoatUpgradeTableBlock
 import com.williambl.boatsandbeeps.table.BoatUpgradeTableGuiDescription
 import com.williambl.boatsandbeeps.upgrade.BoatUpgrade
 import com.williambl.boatsandbeeps.upgrade.BoatUpgradeSlot
+import com.williambl.boatsandbeeps.upgrade.BoatUpgradeType
 import com.williambl.boatsandbeeps.upgrade.UPGRADES_REGISTRY
 import net.fabricmc.fabric.api.`object`.builder.v1.entity.FabricEntityTypeBuilder
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
@@ -57,6 +58,8 @@ val tater = Registry.register(Registry.BLOCK, Identifier("boats-and-beeps:tater"
 val pineapple = Registry.register(Registry.BLOCK, Identifier("boats-and-beeps:pineapple"), BoatUpgradeTableBlock(AbstractBlock.Settings.of(Material.PLANT)))
 
 fun init() {
+    BoatUpgradeType.Companion // force registration
+
     ServerPlayNetworking.registerGlobalReceiver(Identifier("boats-and-beeps:sync_part")) { server, player, handler, buf, sender ->
         val syncId = buf.readVarInt()
         val value = buf.readVarInt()

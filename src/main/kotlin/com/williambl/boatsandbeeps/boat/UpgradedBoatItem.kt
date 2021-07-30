@@ -37,6 +37,7 @@ class UpgradedBoatItem(val type: BoatEntity.Type, settings: Settings) : Item(set
 
     override fun use(world: World, user: PlayerEntity, hand: Hand?): TypedActionResult<ItemStack>? {
         val itemStack = user.getStackInHand(hand)
+        if (world.isClient) return TypedActionResult.pass(itemStack)
         val hitResult: HitResult = raycast(world, user, RaycastContext.FluidHandling.ANY)
         return if (hitResult.type == HitResult.Type.MISS) {
             TypedActionResult.pass(itemStack)
