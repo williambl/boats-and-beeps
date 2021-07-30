@@ -79,10 +79,6 @@ fun init() {
 
 }
 
-fun UpgradedBoatEntity.getAsNbt(): NbtCompound {
-    return writePartsAndUpgrades(parts, upgrades)
-}
-
 fun writePartsAndUpgrades(parts: Int, upgrades: List<Map<BoatUpgradeSlot, BoatUpgrade>>): NbtCompound =
     NbtCompound().apply {
         putInt("Parts", parts)

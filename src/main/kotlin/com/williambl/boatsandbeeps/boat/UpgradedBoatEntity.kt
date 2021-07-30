@@ -6,6 +6,8 @@ import com.williambl.boatsandbeeps.upgrade.BoatUpgrade
 import com.williambl.boatsandbeeps.upgrade.BoatUpgradeSlot
 import com.williambl.boatsandbeeps.upgrade.BoatUpgradeType
 import com.williambl.multipartentities.MultipartEntity
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.minecraft.block.BlockState
 import net.minecraft.block.ShapeContext
 import net.minecraft.entity.Entity
@@ -27,6 +29,7 @@ import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
 import net.minecraft.predicate.entity.EntityPredicates
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
+import net.minecraft.util.Identifier
 import net.minecraft.util.crash.CrashException
 import net.minecraft.util.crash.CrashReport
 import net.minecraft.util.crash.CrashReportSection
@@ -132,19 +135,6 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
             } else if (fuel <= 0 && isLit) {
                 isLit = false
             }
-        }
-    }
-
-    override fun onSpawnPacket(packet: EntitySpawnS2CPacket) {
-        super.onSpawnPacket(packet)
-        if (packet is ExtraDataEntitySpawnS2CPacket) {
-            val extraData = readPartsAndUpgrades(packet.extraData)
-            parts = extraData.first
-            val entities = this.getParts()
-            for (i in entities.indices) {
-                entities[i].id = i + packet.id
-            }
-            upgrades = extraData.second
         }
     }
 
@@ -255,7 +245,14 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
     override fun getPickBlockStack(): ItemStack = getItemStack()
 
     override fun createSpawnPacket(): Packet<*> {
-        return ExtraDataEntitySpawnS2CPacket(this, getAsNbt())
+        return ServerPlayNetworking.createS2CPacket(
+            Identifier("boats-and-beeps:spawn"),
+            PacketByteBufs.create()
+                .also {
+                    EntitySpawnS2CPacket(this).write(it)
+                }
+                .writeNbt(this.getAsNbt())
+        )
     }
 
     override fun writeCustomDataToNbt(nbt: NbtCompound) {
@@ -279,6 +276,7 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
         }
         return ActionResult.PASS
     }
+
     @Suppress("CAST_NEVER_SUCCEEDS")
     @JvmName("accessorHelper\$yawVelocity")
     fun getYawVelocity(): Float = (this as BoatEntityAccessor).yawVelocity
@@ -288,6 +286,10 @@ class UpgradedBoatEntity(world: World, position: Vec3d = Vec3d.ZERO, initialPart
     fun getLocation(): Location? {
         @Suppress("CAST_NEVER_SUCCEEDS")
         return ((this as BoatEntityAccessor).location)
+    }
+
+    fun getAsNbt(): NbtCompound {
+        return writePartsAndUpgrades(parts, upgrades)
     }
 
     companion object {

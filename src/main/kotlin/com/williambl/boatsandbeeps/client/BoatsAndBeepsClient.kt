@@ -1,21 +1,18 @@
 package com.williambl.boatsandbeeps.client
 
-import com.williambl.boatsandbeeps.boatUpgradeTable
-import com.williambl.boatsandbeeps.boatUpgradeTableScreenHandlerType
+import com.williambl.boatsandbeeps.*
+import com.williambl.boatsandbeeps.boat.UpgradedBoatEntity
 import com.williambl.boatsandbeeps.table.BoatUpgradeTableGuiDescription
-import com.williambl.boatsandbeeps.upgradedBoatEntityType
-import com.williambl.boatsandbeeps.upgradedBoatItems
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.client.rendereregistry.v1.EntityRendererRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry
-import net.minecraft.block.BlockRenderType
 import net.minecraft.client.render.RenderLayer
 import net.minecraft.entity.player.PlayerInventory
+import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
-import org.apache.http.impl.io.IdentityInputStream
 
 
 fun init() {
@@ -36,6 +33,26 @@ fun init() {
                 if (vehicle.isLogicalSideForUpdatingMovement) {
                     vehicle.velocity = vehicle.velocity.multiply(x, y, z)
                 }
+            }
+        }
+    }
+
+    ClientPlayNetworking.registerGlobalReceiver(Identifier("boats-and-beeps:spawn")) { client, handler, buf, sender ->
+        val spawnPacket = EntitySpawnS2CPacket(buf)
+        val id = spawnPacket.id
+        val nbt = buf.readNbt()
+
+        client.execute {
+            handler.onEntitySpawn(spawnPacket)
+            val boat = handler.world.getEntityById(id)
+            if (boat is UpgradedBoatEntity && nbt != null) {
+                val extraData = readPartsAndUpgrades(nbt)
+                boat.parts = extraData.first
+                val parts = boat.getParts()
+                for (i in parts.indices) {
+                    parts[i].id = i + id
+                }
+                boat.upgrades = extraData.second
             }
         }
     }

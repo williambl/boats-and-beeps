@@ -84,7 +84,9 @@ class BoatPartEntity(parent: UpgradedBoatEntity, width: Float, height: Float) :
 
     override fun interactAt(player: PlayerEntity, hitPos: Vec3d, hand: Hand): ActionResult {
         val partNumber = parent.partEntities.indexOf(this)
-        DistHelper.sendInteractAtPArtClientToServer(parent, hand, hitPos, partNumber)
+        if (player.world.isClient) {
+            DistHelper.sendInteractAtPArtClientToServer(parent, hand, hitPos, partNumber)
+        }
         return parent.interactAtPart(player, hand, hitPos, partNumber)
     }
 
